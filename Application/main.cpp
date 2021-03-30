@@ -102,6 +102,7 @@ Egg::Cam::FirstPerson::P camera;
 com_ptr<ID3D12RootSignature> rootSig;
 
 GG::ConstantBuffer<PerFrameCb> perFrameCb;
+GG::ConstantBuffer<PerObjectCb> perObjectCb;
 
 GG::DescriptorHeap::P heap;
 //GG::ConstantBuffer<PerObjectCb> perObjectCb;
@@ -160,7 +161,7 @@ int main(int, char**)
 
     camera = Egg::Cam::FirstPerson::Create()->SetView(Float3(0, 5, -7), Float3(0, 0, 1));
     perFrameCb.CreateResources(device, sizeof(PerFrameCb));
-    //perObjectCb.CreateResources(device, sizeof(GG::PerObjectCb));
+    perObjectCb.CreateResources(device, sizeof(GG::PerObjectCb));
 
     GG::Geometry::P geo = GG::Geometry::Create(device, "sphere.fbx");
     GG::Tex2D::P tex = GG::Tex2D::Create(device, heap, "checkered.png");
@@ -292,10 +293,10 @@ int main(int, char**)
 
             perFrameCb.Upload();
 
-            //perObjectCb->data[0].modelTransform = Float4x4::Identity;
-            //perObjectCb->data[0].modelTransformInverse = Float4x4::Identity;
+            perObjectCb->data[0].modelTransform = Float4x4::Identity;
+            perObjectCb->data[0].modelTransformInverse = Float4x4::Identity;
 
-            //perObjectCb.Upload();
+            perObjectCb.Upload();
         }
         // populate command list and render
         {
@@ -335,7 +336,8 @@ int main(int, char**)
             commandList->SetGraphicsRootSignature(rootSig.Get());
             commandList->SetPipelineState(pso->Get());
             commandList->SetGraphicsRootConstantBufferView(0, perFrameCb.GetGPUVirtualAddress());
-            commandList->SetGraphicsRootDescriptorTable(1,heap->GetGPUHandle(0));
+            commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress());
+            commandList->SetGraphicsRootDescriptorTable(2,heap->GetGPUHandle(0));
             geo->Draw(commandList);
 
 

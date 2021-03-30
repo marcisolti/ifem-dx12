@@ -14,13 +14,11 @@ struct VSOutput {
 [RootSignature(lightRootSig)]
 VSOutput main(IAOutput iao) {
 	VSOutput vso;
-	vso.position = float4(1, 1, 1, 1);
-		/*
+	vso.position =
 		mul(
 		viewProjMat, mul(
 			modelMat, float4(iao.position, 1.0f)
 		)
 	);
-	*/
 	return vso;
 }

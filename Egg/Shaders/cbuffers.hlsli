@@ -11,9 +11,8 @@ cbuffer PerFrameCb : register(b0) {
 	int nrLights;
 }
 
-/*
+
 cbuffer PerObjectCb : register(b1) {
 	float4x4 modelMat;
 	float4x4 modelMatInv;
 }
-*/
