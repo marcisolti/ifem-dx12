@@ -4,7 +4,8 @@
 
 namespace GG
 {
-	GG_CLASS(GPSO)
+	class GPSO
+	{
 
 		ID3D12PipelineState* gpso;
 
@@ -57,5 +58,5 @@ namespace GG
 
 		ID3D12PipelineState* Get() { return gpso; }
 
-	GG_ENDCLASS
+	};
 }

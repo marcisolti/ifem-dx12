@@ -9,7 +9,8 @@
 
 namespace GG
 {
-	GG_CLASS(Tex2D)
+	class Tex2D
+	{
 
 		com_ptr<ID3D12Resource> resource;
 		com_ptr<ID3D12Resource> uploadResource;
@@ -22,7 +23,7 @@ namespace GG
 		int index;
 		std::string path;
 
-		Tex2D(ID3D12Device* device, GG::DescriptorHeap::A heap, const std::string &filePath)
+		Tex2D(ID3D12Device* device, GG::DescriptorHeap* heap, const std::string &filePath)
 			:path{ filePath }, uploaded{false}
 		{
 			// create resource for texture uploading
@@ -87,7 +88,7 @@ namespace GG
 			}
 		}	
 
-		void CreateSrv(ID3D12Device* device, GG::DescriptorHeap::P heap, int index)
+		void CreateSrv(ID3D12Device* device, GG::DescriptorHeap* heap, int index)
 		{
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvd;
@@ -130,5 +131,5 @@ namespace GG
 
 		int GetIndex() { return index; }
 
-	GG_ENDCLASS
+	};
 }

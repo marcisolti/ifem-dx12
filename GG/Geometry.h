@@ -18,7 +18,8 @@ struct PNT_Vertex
 
 namespace GG {
 
-	GG_CLASS(Geometry)
+	class Geometry
+	{
 
 		// resources
 		com_ptr<ID3D12Resource> vertexBuffer;
@@ -35,7 +36,7 @@ namespace GG {
 
 
 	public:
-		
+
 		std::string path;
 		std::vector<PNT_Vertex> vertices;
 		std::vector<uint32_t> indices;
@@ -44,7 +45,7 @@ namespace GG {
 			: path{ filePath }
 		{
 			// import geometry from file
-			
+
 			uint32_t sizeInBytes;
 			uint32_t indexDataSizeInBytes;
 			uint32_t stride;
@@ -106,87 +107,96 @@ namespace GG {
 			{
 				static int id = 0;
 
-				CD3DX12_HEAP_PROPERTIES heapProp{ D3D12_HEAP_TYPE_UPLOAD };
-				CD3DX12_RESOURCE_DESC vertexBufferSize = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes);
-				CD3DX12_RESOURCE_DESC indexBufferSize = CD3DX12_RESOURCE_DESC::Buffer(indexDataSizeInBytes);
+				// create resources
+				{
+					CD3DX12_HEAP_PROPERTIES heapProp{ D3D12_HEAP_TYPE_UPLOAD };
+					CD3DX12_RESOURCE_DESC vertexBufferSize = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes);
+					CD3DX12_RESOURCE_DESC indexBufferSize = CD3DX12_RESOURCE_DESC::Buffer(indexDataSizeInBytes);
 
-				DX_API("Failed to create vertex buffer (IndexedGeometry)")
-					device->CreateCommittedResource(
-						&heapProp,
-						D3D12_HEAP_FLAG_NONE,
-						&vertexBufferSize,
-						D3D12_RESOURCE_STATE_GENERIC_READ,
-						nullptr,
-						IID_PPV_ARGS(vertexBuffer.GetAddressOf())
-					);
+					DX_API("Failed to create vertex buffer (IndexedGeometry)")
+						device->CreateCommittedResource(
+							&heapProp,
+							D3D12_HEAP_FLAG_NONE,
+							&vertexBufferSize,
+							D3D12_RESOURCE_STATE_GENERIC_READ,
+							nullptr,
+							IID_PPV_ARGS(vertexBuffer.GetAddressOf())
+						);
 
-				DX_API("Failed to create index buffer (IndexedGeometry")
-					device->CreateCommittedResource(
-						&heapProp,
-						D3D12_HEAP_FLAG_NONE,
-						&indexBufferSize,
-						D3D12_RESOURCE_STATE_GENERIC_READ,
-						nullptr,
-						IID_PPV_ARGS(indexBuffer.GetAddressOf())
-					);
+					DX_API("Failed to create index buffer (IndexedGeometry")
+						device->CreateCommittedResource(
+							&heapProp,
+							D3D12_HEAP_FLAG_NONE,
+							&indexBufferSize,
+							D3D12_RESOURCE_STATE_GENERIC_READ,
+							nullptr,
+							IID_PPV_ARGS(indexBuffer.GetAddressOf())
+						);
+				}
 
-				CD3DX12_RANGE range{ 0,0 };
-				void* mappedPtr;
+				// map ptrs
+				{
+					CD3DX12_RANGE range{ 0,0 };
+					void* mappedPtr;
 
-				DX_API("Failed to map vertex buffer (IndexedGeometry)")
-					vertexBuffer->Map(0, &range, &mappedPtr);
+					DX_API("Failed to map vertex buffer (IndexedGeometry)")
+						vertexBuffer->Map(0, &range, &mappedPtr);
 
-				memcpy(mappedPtr, data, sizeInBytes);
-				vertexBuffer->Unmap(0, nullptr);
+					memcpy(mappedPtr, data, sizeInBytes);
+					vertexBuffer->Unmap(0, nullptr);
 
-				DX_API("Failed to set name for vertex buffer (IndexedGeometry)")
-					vertexBuffer->SetName(Egg::Utility::WFormat(L"VB(IndexedGeometry)#%d", id).c_str());
+					DX_API("Failed to set name for vertex buffer (IndexedGeometry)")
+						vertexBuffer->SetName(Egg::Utility::WFormat(L"VB(IndexedGeometry)#%d", id).c_str());
 
-				DX_API("Failed to map index buffer (IndexedGeometry")
-					indexBuffer->Map(0, &range, &mappedPtr);
+					DX_API("Failed to map index buffer (IndexedGeometry")
+						indexBuffer->Map(0, &range, &mappedPtr);
 
-				memcpy(mappedPtr, indexData, indexDataSizeInBytes);
-				indexBuffer->Unmap(0, nullptr);
+					memcpy(mappedPtr, indexData, indexDataSizeInBytes);
+					indexBuffer->Unmap(0, nullptr);
 
-				DX_API("Failed to set name for index buffer (IndexedGeometry)")
-					indexBuffer->SetName(Egg::Utility::WFormat(L"IB(IndexedGeometry)#%d", id++).c_str());
+					DX_API("Failed to set name for index buffer (IndexedGeometry)")
+						indexBuffer->SetName(Egg::Utility::WFormat(L"IB(IndexedGeometry)#%d", id++).c_str());
+				}
 
-				vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-				vertexBufferView.SizeInBytes = sizeInBytes;
-				vertexBufferView.StrideInBytes = stride;
+				// set props
+				{
+					vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+					vertexBufferView.SizeInBytes = sizeInBytes;
+					vertexBufferView.StrideInBytes = stride;
 
-				indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
-				indexBufferView.Format = indexFormat;
-				indexBufferView.SizeInBytes = indexDataSizeInBytes;
+					indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
+					indexBufferView.Format = indexFormat;
+					indexBufferView.SizeInBytes = indexDataSizeInBytes;
 
-				ASSERT(indexFormat == DXGI_FORMAT_R16_UINT || indexFormat == DXGI_FORMAT_R32_UINT, "index format must be DXGI_FORMAT_R16_UINT or DGXI_FORMAT_R32_UINT");
+					ASSERT(indexFormat == DXGI_FORMAT_R16_UINT || indexFormat == DXGI_FORMAT_R32_UINT, "index format must be DXGI_FORMAT_R16_UINT or DGXI_FORMAT_R32_UINT");
 
-				unsigned int formatSize = (indexFormat == DXGI_FORMAT_R16_UINT) ? 2 : 4;
+					unsigned int formatSize = (indexFormat == DXGI_FORMAT_R16_UINT) ? 2 : 4;
 
-				ASSERT(indexDataSizeInBytes % formatSize == 0, "index buffer size must be divisible by its format size");
+					ASSERT(indexDataSizeInBytes % formatSize == 0, "index buffer size must be divisible by its format size");
 
-				indexCount = (indexDataSizeInBytes / formatSize);
+					indexCount = (indexDataSizeInBytes / formatSize);
 
-				inputElements = {
-					{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-					{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-					{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				};
+					inputElements = {
+						{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+						{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+						{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+					};
 
-				inputLayout.NumElements = (unsigned int)inputElements.size();
-				inputLayout.pInputElementDescs = &(inputElements.at(0));
+					inputLayout.NumElements = (unsigned int)inputElements.size();
+					inputLayout.pInputElementDescs = &(inputElements.at(0));
+				}
 
 			}
 		}
 
 		Geometry(
-			ID3D12Device* device, 
-			void* data, 
-			uint32_t sizeInBytes, 
+			ID3D12Device* device,
+			void* data,
+			uint32_t sizeInBytes,
 			uint32_t stride,
-			void* indexData, 
-			uint32_t indexDataSizeInBytes, 
-			DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT) 
+			void* indexData,
+			uint32_t indexDataSizeInBytes,
+			DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT)
 		{
 			static int id = 0;
 			CD3DX12_HEAP_PROPERTIES heapProp{ D3D12_HEAP_TYPE_UPLOAD };
@@ -256,7 +266,7 @@ namespace GG {
 				vertexBuffer->Map(0, &readRange, &mappedPtr);
 
 			memcpy(mappedPtr, data, sizeInBytes);
-			
+
 			vertexBuffer->Unmap(0, nullptr);
 		}
 
@@ -264,7 +274,7 @@ namespace GG {
 
 		D3D12_PRIMITIVE_TOPOLOGY GetTopology() const { return topology; }
 
-		D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType() const 
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType() const
 		{
 			switch (topology) {
 			case D3D_PRIMITIVE_TOPOLOGY_POINTLIST:
@@ -294,12 +304,12 @@ namespace GG {
 			commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 		}
 
-		const D3D12_INPUT_LAYOUT_DESC& GetInputLayout() 
+		const D3D12_INPUT_LAYOUT_DESC& GetInputLayout()
 		{
 			inputLayout.NumElements = (unsigned int)inputElements.size();
 			inputLayout.pInputElementDescs = &(inputElements.at(0));
 			return inputLayout;
 		}
 
-	GG_ENDCLASS
+	};
 }

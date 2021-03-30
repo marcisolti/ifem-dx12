@@ -75,12 +75,12 @@ static ID3D12Fence*                         fence = nullptr;
 static HANDLE                               fenceEvent = nullptr;
 static uint64_t                             fenceLastSignaledValue = 0;
 
-static IDXGISwapChain3*                     swapChain = nullptr;
-static HANDLE                               swapChainWaitableObject = nullptr;
-
 using clock_type = std::chrono::high_resolution_clock;
 std::chrono::time_point<clock_type> timestampStart;
 std::chrono::time_point<clock_type> timestampEnd;
+
+static IDXGISwapChain3*                     swapChain = nullptr;
+static HANDLE                               swapChainWaitableObject = nullptr;
 
 // --- ----
 // --- RENDER TARGETS
@@ -89,27 +89,25 @@ std::chrono::time_point<clock_type> timestampEnd;
 D3D12_VIEWPORT viewPort;
 D3D12_RECT scissorRect;
 // rtv
-constexpr uint32_t NUM_BACK_BUFFERS = 3;
-static std::vector<com_ptr<ID3D12Resource>> renderTargets;
-static GG::DescriptorHeap::P                rtvHeap;
-static GG::DescriptorHeap::P                appSrvHeap;
-// depth
-static com_ptr<ID3D12Resource>              depthStencilBuffer;
-static GG::DescriptorHeap::P                dsvHeap;
+constexpr uint32_t                              NUM_BACK_BUFFERS = 3;
+GG::DescriptorHeap*                             rtvHeap;
+static std::vector<com_ptr<ID3D12Resource>>     renderTargets;
+GG::DescriptorHeap*                             dsvHeap;
+static com_ptr<ID3D12Resource>                  depthStencilBuffer;
 
 
-com_ptr<ID3D12RootSignature> rootSig;
+com_ptr<ID3D12RootSignature>        rootSig;
 
-Egg::Cam::FirstPerson::P camera;
-GG::ConstantBuffer<PerFrameCb> perFrameCb;
-GG::ConstantBuffer<PerObjectCb> perObjectCb;
+Egg::Cam::FirstPerson::P            camera;
+GG::ConstantBuffer<PerFrameCb>      perFrameCb;
+GG::ConstantBuffer<PerObjectCb>     perObjectCb;
 
-GG::DescriptorHeap::P heap;
+GG::DescriptorHeap*                 heap;
+GG::DescriptorHeap*                 appSrvHeap;
 
-GG::GPSO::P pso;
-GG::Geometry::P geo;
-GG::Tex2D::P tex;
-
+GG::GPSO* pso;
+GG::Geometry* geo;
+GG::Tex2D* tex;
 
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -166,19 +164,19 @@ int main(int, char**)
 
     // create assets
     {
-        heap = GG::DescriptorHeap::Create(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048, true);
+        heap = new GG::DescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048, true);
         com_ptr<ID3DBlob> vs = Egg::Shader::LoadCso("Shaders/pbrVS.cso");
         com_ptr<ID3DBlob> ps = Egg::Shader::LoadCso("Shaders/pbrPS.cso");
         rootSig = Egg::Shader::LoadRootSignature(device, vs.Get());
 
-        pso = GG::GPSO::Create(device, rootSig, vs, ps);
+        pso = new GG::GPSO(device, rootSig, vs, ps);
 
         camera = Egg::Cam::FirstPerson::Create()->SetView(Float3(0, 5, -7), Float3(0, 0, 1));
         perFrameCb.CreateResources(device, sizeof(PerFrameCb));
         perObjectCb.CreateResources(device, sizeof(GG::PerObjectCb));
 
-        geo = GG::Geometry::Create(device, "sphere.fbx");
-        tex = GG::Tex2D::Create(device, heap, "checkered.png");
+        geo = new GG::Geometry(device, "sphere.fbx");
+        tex = new GG::Tex2D(device, heap, "checkered.png");
         tex->CreateSrv(device, heap, 0);
     }
 
@@ -294,13 +292,29 @@ int main(int, char**)
         dt = std::chrono::duration<float>(timestampEnd - timestampStart).count();
         timestampStart = timestampEnd;
 
+        //thread 1                  thread 2
+                            /*
+                            * draw static geometry
+                            * if(new) copy_geo
+                            * draw dynamic geometry
+                            */
+
         // step simulator
         /*
             <-bcs
             <-loads
             ->displacements
         */
+        
+        // draw result
+        /*
+         * update vertices
+         * update normals
+         * new = true
+         */
 
+
+         
         // update the app
         {
             // perFrameCb
@@ -465,7 +479,7 @@ bool CreateDeviceD3D(HWND hWnd)
 #endif
 
 
-    appSrvHeap = GG::DescriptorHeap::Create(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true);
+    appSrvHeap = new GG::DescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true);
 
     // command queue
     {
@@ -560,7 +574,7 @@ void CreateRenderTarget()
     }
 
     // Create Render Target View Descriptor Heap, like a RenderTargetView** on the GPU. A set of pointers.
-    rtvHeap = GG::DescriptorHeap::Create(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, NUM_BACK_BUFFERS);
+    rtvHeap = new GG::DescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, NUM_BACK_BUFFERS);
 
     // Create Render Target Views
     {
@@ -578,7 +592,7 @@ void CreateRenderTarget()
 
     // Depth stencil
     {
-        dsvHeap = GG::DescriptorHeap::Create(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+        dsvHeap = new GG::DescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
         D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
         depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
