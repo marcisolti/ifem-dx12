@@ -1,0 +1,12 @@
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define GG_ENDCLASS };
+#define GG_CLASS(T) GG_DECL(T) class T : public Egg::Shared<T>, public std::enable_shared_from_this<T> {
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define DX_API(msg) HResultTester(msg, __FILE__, __LINE__) <<
+#define DX_API(msg, __VA_ARGS__) Egg::Internal::HResultTester(msg, __FILE__, __LINE__, __VA_ARGS__) <<
+#define IID_PPV_ARGS(ppType) __uuidof(**(ppType)), IID_PPV_ARGS_Helper(ppType)
+#define GG_SUBCLASS(T, BASE) GG_DECL(T) class T : public BASE, public Egg::Shared<T> {public: using Egg::Shared<T>::Create; using Egg::Shared<T>::GetShared; using Egg::Shared<T>::P;private:

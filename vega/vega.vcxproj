@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="minivector\eig3.cpp" />
+    <ClCompile Include="minivector\mat3d.cpp" />
+    <ClCompile Include="minivector\vec2d.cpp" />
+    <ClCompile Include="minivector\vec3.cpp" />
+    <ClCompile Include="minivector\vec3d.cpp" />
+    <ClCompile Include="minivector\vec3i.cpp" />
+    <ClCompile Include="minivector\vec4i.cpp" />
+    <ClCompile Include="utility\boundingBox.cpp" />
+    <ClCompile Include="utility\constrainedDOFs.cpp" />
+    <ClCompile Include="utility\geometryQuery.cpp" />
+    <ClCompile Include="utility\graph.cpp" />
+    <ClCompile Include="utility\matrixIO.cpp" />
+    <ClCompile Include="utility\sparseMatrix.cpp" />
+    <ClCompile Include="utility\triangle.cpp" />
+    <ClCompile Include="utility\tribox3.cpp" />
+    <ClCompile Include="volumetricMesh\computeStiffnessMatrixNullspace.cpp" />
+    <ClCompile Include="volumetricMesh\cubicMesh.cpp" />
+    <ClCompile Include="volumetricMesh\generateGradientMatrix.cpp" />
+    <ClCompile Include="volumetricMesh\generateInterpolationMatrix.cpp" />
+    <ClCompile Include="volumetricMesh\generateMassMatrix.cpp" />
+    <ClCompile Include="volumetricMesh\generateMeshGraph.cpp" />
+    <ClCompile Include="volumetricMesh\generateTetMeshFromCubicMesh.cpp" />
+    <ClCompile Include="volumetricMesh\interpolationWeightsMultiLoad.cpp" />
+    <ClCompile Include="volumetricMesh\tetMesh.cpp" />
+    <ClCompile Include="volumetricMesh\volumetricMesh.cpp" />
+    <ClCompile Include="volumetricMesh\volumetricMeshDeformationGradient.cpp" />
+    <ClCompile Include="volumetricMesh\volumetricMeshENuMaterial.cpp" />
+    <ClCompile Include="volumetricMesh\volumetricMeshLoader.cpp" />
+    <ClCompile Include="volumetricMesh\volumetricMeshMooneyRivlinMaterial.cpp" />
+    <ClCompile Include="volumetricMesh\volumetricMeshOrthotropicMaterial.cpp" />
+    <ClCompile Include="volumetricMesh\volumetricMeshParser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="minivector\eig3.h" />
+    <ClInclude Include="minivector\mat3d.h" />
+    <ClInclude Include="minivector\minivector.h" />
+    <ClInclude Include="minivector\vec2d.h" />
+    <ClInclude Include="minivector\vec2i.h" />
+    <ClInclude Include="minivector\vec3.h" />
+    <ClInclude Include="minivector\vec3d.h" />
+    <ClInclude Include="minivector\vec3i.h" />
+    <ClInclude Include="minivector\vec4d.h" />
+    <ClInclude Include="minivector\vec4i.h" />
+    <ClInclude Include="utility\basicAlgorithms.h" />
+    <ClInclude Include="utility\boundingBox.h" />
+    <ClInclude Include="utility\constrainedDOFs.h" />
+    <ClInclude Include="utility\geometryQuery.h" />
+    <ClInclude Include="utility\graph.h" />
+    <ClInclude Include="utility\matrixIO.h" />
+    <ClInclude Include="utility\matrixMacros.h" />
+    <ClInclude Include="utility\matrixMultiplyMacros.h" />
+    <ClInclude Include="utility\range.h" />
+    <ClInclude Include="utility\sparseMatrix.h" />
+    <ClInclude Include="utility\triangle.h" />
+    <ClInclude Include="utility\tribox3.h" />
+    <ClInclude Include="utility\triple.h" />
+    <ClInclude Include="utility\valueIndex.h" />
+    <ClInclude Include="utility\vegalong.h" />
+    <ClInclude Include="volumetricMesh\computeStiffnessMatrixNullspace.h" />
+    <ClInclude Include="volumetricMesh\cubicMesh.h" />
+    <ClInclude Include="volumetricMesh\generateGradientMatrix.h" />
+    <ClInclude Include="volumetricMesh\generateInterpolationMatrix.h" />
+    <ClInclude Include="volumetricMesh\generateMassMatrix.h" />
+    <ClInclude Include="volumetricMesh\generateMeshGraph.h" />
+    <ClInclude Include="volumetricMesh\generateTetMeshFromCubicMesh.h" />
+    <ClInclude Include="volumetricMesh\interpolationWeightsMultiLoad.h" />
+    <ClInclude Include="volumetricMesh\tetMesh.h" />
+    <ClInclude Include="volumetricMesh\volumetricMesh.h" />
+    <ClInclude Include="volumetricMesh\volumetricMeshDeformationGradient.h" />
+    <ClInclude Include="volumetricMesh\volumetricMeshENuMaterial.h" />
+    <ClInclude Include="volumetricMesh\volumetricMeshLoader.h" />
+    <ClInclude Include="volumetricMesh\volumetricMeshMooneyRivlinMaterial.h" />
+    <ClInclude Include="volumetricMesh\volumetricMeshOrthotropicMaterial.h" />
+    <ClInclude Include="volumetricMesh\volumetricMeshParser.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{4DB4C405-DCD3-408A-87A9-D7964B61F3FA}</ProjectGuid>
+    <RootNamespace>Egg</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Default.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>false</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

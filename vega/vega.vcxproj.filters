@@ -1,0 +1,234 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="minivector">
+      <UniqueIdentifier>{623a4e00-daa2-4944-85d7-bec1083a8880}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="volumetricMesh">
+      <UniqueIdentifier>{fcdef387-effb-424b-8d3b-580b4fca6214}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utility">
+      <UniqueIdentifier>{0f632385-4b7c-4125-8d68-622757a7c8b8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="minivector\eig3.cpp">
+      <Filter>minivector</Filter>
+    </ClCompile>
+    <ClCompile Include="minivector\mat3d.cpp">
+      <Filter>minivector</Filter>
+    </ClCompile>
+    <ClCompile Include="minivector\vec2d.cpp">
+      <Filter>minivector</Filter>
+    </ClCompile>
+    <ClCompile Include="minivector\vec3.cpp">
+      <Filter>minivector</Filter>
+    </ClCompile>
+    <ClCompile Include="minivector\vec3d.cpp">
+      <Filter>minivector</Filter>
+    </ClCompile>
+    <ClCompile Include="minivector\vec3i.cpp">
+      <Filter>minivector</Filter>
+    </ClCompile>
+    <ClCompile Include="minivector\vec4i.cpp">
+      <Filter>minivector</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\computeStiffnessMatrixNullspace.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\cubicMesh.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\generateGradientMatrix.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\generateInterpolationMatrix.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\generateMassMatrix.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\generateMeshGraph.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\generateTetMeshFromCubicMesh.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\interpolationWeightsMultiLoad.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\tetMesh.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\volumetricMesh.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\volumetricMeshDeformationGradient.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\volumetricMeshENuMaterial.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\volumetricMeshLoader.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\volumetricMeshMooneyRivlinMaterial.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\volumetricMeshOrthotropicMaterial.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="volumetricMesh\volumetricMeshParser.cpp">
+      <Filter>volumetricMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\boundingBox.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\constrainedDOFs.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\geometryQuery.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\graph.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\matrixIO.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\sparseMatrix.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\triangle.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\tribox3.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="minivector\eig3.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\mat3d.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\minivector.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\vec2d.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\vec2i.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\vec3.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\vec3d.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\vec3i.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\vec4d.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="minivector\vec4i.h">
+      <Filter>minivector</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\computeStiffnessMatrixNullspace.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\cubicMesh.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\generateGradientMatrix.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\generateInterpolationMatrix.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\generateMassMatrix.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\generateMeshGraph.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\generateTetMeshFromCubicMesh.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\interpolationWeightsMultiLoad.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\tetMesh.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\volumetricMesh.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\volumetricMeshDeformationGradient.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\volumetricMeshENuMaterial.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\volumetricMeshLoader.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\volumetricMeshMooneyRivlinMaterial.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\volumetricMeshOrthotropicMaterial.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="volumetricMesh\volumetricMeshParser.h">
+      <Filter>volumetricMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\basicAlgorithms.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\boundingBox.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\constrainedDOFs.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\geometryQuery.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\graph.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\matrixIO.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\matrixMacros.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\matrixMultiplyMacros.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\range.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\sparseMatrix.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\triangle.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\tribox3.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\triple.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\valueIndex.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\vegalong.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

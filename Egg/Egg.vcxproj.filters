@@ -1,0 +1,223 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{f3cf27d1-9fc3-4b06-aa81-70867789ae4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{c76fb140-ceaa-4268-b77f-2406ec79c7ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Cam">
+      <UniqueIdentifier>{05b29fdf-d853-404e-ac79-906643457b7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{494d1a17-c0cb-4007-a919-3cc143076c2d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Math\Bool1.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Bool2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Bool2Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Bool3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Bool3Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Bool4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Bool4Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float1.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float2Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float3Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float4Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Float4x4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Int1.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Int2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Int2Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Int3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Int3Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Int4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Int4Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Math.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\UInt1.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\UInt2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\UInt2Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\UInt3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\UInt3Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\UInt4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\UInt4Swizzle.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Cam\Base.h">
+      <Filter>Cam</Filter>
+    </ClInclude>
+    <ClInclude Include="Cam\FirstPerson.h">
+      <Filter>Cam</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dx12.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Math\Bool1.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Bool2.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Bool3.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Bool4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Float1.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Float2.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Float3.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Float4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Float4x4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Int1.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Int2.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Int3.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Int4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\UInt1.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\UInt2.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\UInt3.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\UInt4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Cam\FirstPerson.cpp">
+      <Filter>Cam</Filter>
+    </ClCompile>
+    <ClCompile Include="Internal.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Shaders\RootSignatures.hlsli">
+      <Filter>Shaders</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+    <None Include="Shaders\cbBasic.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cbuffers.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\pbrBSDF.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\pbrPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\pbrVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\lightVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\lightPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>
