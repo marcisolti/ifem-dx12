@@ -97,15 +97,19 @@ static GG::DescriptorHeap::P                appSrvHeap;
 static com_ptr<ID3D12Resource>              depthStencilBuffer;
 static GG::DescriptorHeap::P                dsvHeap;
 
-Egg::Cam::FirstPerson::P camera;
 
 com_ptr<ID3D12RootSignature> rootSig;
 
+Egg::Cam::FirstPerson::P camera;
 GG::ConstantBuffer<PerFrameCb> perFrameCb;
 GG::ConstantBuffer<PerObjectCb> perObjectCb;
 
 GG::DescriptorHeap::P heap;
-//GG::ConstantBuffer<PerObjectCb> perObjectCb;
+
+GG::GPSO::P pso;
+GG::Geometry::P geo;
+GG::Tex2D::P tex;
+
 
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -136,36 +140,47 @@ int main(int, char**)
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
+    // init simulator
+    /*
+        --vmesh
+        --smesh
+    */
+
     // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    {
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplDX12_Init(
-        device, NUM_FRAMES_IN_FLIGHT, DXGI_FORMAT_R8G8B8A8_UNORM, 
-        appSrvHeap->GetPtr(),
-        appSrvHeap->GetCPUHandle(),
-        appSrvHeap->GetGPUHandle()
-    );
+        // Setup Platform/Renderer backends
+        ImGui_ImplWin32_Init(hwnd);
+        ImGui_ImplDX12_Init(
+            device, NUM_FRAMES_IN_FLIGHT, DXGI_FORMAT_R8G8B8A8_UNORM, 
+            appSrvHeap->GetPtr(),
+            appSrvHeap->GetCPUHandle(),
+            appSrvHeap->GetGPUHandle()
+        );
+    }
 
-    heap = GG::DescriptorHeap::Create(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048, true);
-    com_ptr<ID3DBlob> vs = Egg::Shader::LoadCso("Shaders/pbrVS.cso");
-    com_ptr<ID3DBlob> ps = Egg::Shader::LoadCso("Shaders/pbrPS.cso");
-    rootSig = Egg::Shader::LoadRootSignature(device, vs.Get());
+    // create assets
+    {
+        heap = GG::DescriptorHeap::Create(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048, true);
+        com_ptr<ID3DBlob> vs = Egg::Shader::LoadCso("Shaders/pbrVS.cso");
+        com_ptr<ID3DBlob> ps = Egg::Shader::LoadCso("Shaders/pbrPS.cso");
+        rootSig = Egg::Shader::LoadRootSignature(device, vs.Get());
 
-    GG::GPSO::P pso = GG::GPSO::Create(device, rootSig, vs, ps);
+        pso = GG::GPSO::Create(device, rootSig, vs, ps);
 
-    camera = Egg::Cam::FirstPerson::Create()->SetView(Float3(0, 5, -7), Float3(0, 0, 1));
-    perFrameCb.CreateResources(device, sizeof(PerFrameCb));
-    perObjectCb.CreateResources(device, sizeof(GG::PerObjectCb));
+        camera = Egg::Cam::FirstPerson::Create()->SetView(Float3(0, 5, -7), Float3(0, 0, 1));
+        perFrameCb.CreateResources(device, sizeof(PerFrameCb));
+        perObjectCb.CreateResources(device, sizeof(GG::PerObjectCb));
 
-    GG::Geometry::P geo = GG::Geometry::Create(device, "sphere.fbx");
-    GG::Tex2D::P tex = GG::Tex2D::Create(device, heap, "checkered.png");
-    tex->CreateSrv(device, heap, 0);
+        geo = GG::Geometry::Create(device, "sphere.fbx");
+        tex = GG::Tex2D::Create(device, heap, "checkered.png");
+        tex->CreateSrv(device, heap, 0);
+    }
 
     /*
     const std::string id{ "sphere" };
@@ -217,68 +232,78 @@ int main(int, char**)
     ZeroMemory(&msg, sizeof(msg));
     while (msg.message != WM_QUIT)
     {
-        // Poll and handle messages (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+        // imgue
         {
-            ::TranslateMessage(&msg);
-            ::DispatchMessage(&msg);
-            continue;
+            // Poll and handle messages (inputs, window resize, etc.)
+            // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+            // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
+            // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
+            // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+            if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+            {
+                ::TranslateMessage(&msg);
+                ::DispatchMessage(&msg);
+                continue;
+            }
+
+            // Start the Dear ImGui frame
+            ImGui_ImplDX12_NewFrame();
+            ImGui_ImplWin32_NewFrame();
+            ImGui::NewFrame();
+
+            // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+            if (show_demo_window)
+                ImGui::ShowDemoWindow(&show_demo_window);
+
+            // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+            {
+                static float f = 0.0f;
+                static int counter = 0;
+
+                ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+                ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+                ImGui::Checkbox("Another Window", &show_another_window);
+                ImGui::Checkbox("Load sim", &load);
+
+                ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+                if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                    counter++;
+                ImGui::SameLine();
+                ImGui::Text("counter = %d", counter);
+
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::End();
+            }
+
+            // 3. Show another simple window.
+            if (show_another_window)
+            {
+                ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+                ImGui::Text("Hello from another window!");
+                ImGui::End();
+            }
+
+            // Rendering
+            ImGui::Render();
         }
-
-        // Start the Dear ImGui frame
-        ImGui_ImplDX12_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-            ImGui::Checkbox("Load sim", &load);
-
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            ImGui::End();
-        }
-
-        // Rendering
-        ImGui::Render();
 
         timestampEnd = clock_type::now();
         dt = std::chrono::duration<float>(timestampEnd - timestampStart).count();
         timestampStart = timestampEnd;
 
+        // step simulator
+        /*
+            <-bcs
+            <-loads
+            ->displacements
+        */
+
         // update the app
-        // perFrameCb
         {
+            // perFrameCb
             camera->Animate(dt);
             perFrameCb->viewProjTransform = camera->GetViewMatrix() * camera->GetProjMatrix();
             perFrameCb->rayDirTransform = camera->GetRayDirMatrix();
@@ -301,7 +326,7 @@ int main(int, char**)
         // populate command list and render
         {
             FrameContext* frameCtx = WaitForNextFrameResources();
-            UINT backBufferIdx = swapChain->GetCurrentBackBufferIndex();
+            uint32_t backBufferIdx = swapChain->GetCurrentBackBufferIndex();
             {
                 frameCtx->commandAllocator->Reset();
 
@@ -333,12 +358,17 @@ int main(int, char**)
 
             heap->BindHeap(commandList);
 
+            // draw
             commandList->SetGraphicsRootSignature(rootSig.Get());
-            commandList->SetPipelineState(pso->Get());
-            commandList->SetGraphicsRootConstantBufferView(0, perFrameCb.GetGPUVirtualAddress());
-            commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress());
-            commandList->SetGraphicsRootDescriptorTable(2,heap->GetGPUHandle(0));
-            geo->Draw(commandList);
+            {
+                commandList->SetPipelineState(pso->Get());
+
+                commandList->SetGraphicsRootConstantBufferView(0, perFrameCb.GetGPUVirtualAddress());
+                commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress());
+                commandList->SetGraphicsRootDescriptorTable(2,heap->GetGPUHandle(0));
+
+                geo->Draw(commandList);
+            }
 
 
             appSrvHeap->BindHeap(commandList);
