@@ -85,6 +85,16 @@ struct Entity
 		delete geometry;
 		delete texture;
 	}
+
+	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, GG::Geometry* geo, const std::string& texturePath)
+	{
+		this->id = id;
+		geometry = geo;
+		texture = new GG::Tex2D(device, heap, texturePath);
+		texture->CreateSrv(device, heap, id);
+
+		transform = Float4x4::Identity;
+	}
 };
 
 class Renderer

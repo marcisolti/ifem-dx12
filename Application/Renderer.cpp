@@ -4,7 +4,6 @@ FrameContext frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 
 void Renderer::StartUp(HWND hwnd)
 {
-    ObjLoader::parseFile("../Media/vega/turtle.veg.obj");
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -63,6 +62,11 @@ void Renderer::StartUp(HWND hwnd)
 
         Entity* bunny = new Entity{ objectCount, device, heap, std::string{"bunny.obj"}, std::string{"bunnybase.png"} };
         entities.push_back(bunny);
+        objectCount++;
+
+        GG::Geometry* turtle = ObjLoader::parseFile(device, "../Media/vega/turtle.veg.obj");
+        Entity* turtlee = new Entity{ objectCount, device, heap, turtle, std::string{"bunnybase.png"} };
+        entities.push_back(turtlee);
         objectCount++;
     }
 
