@@ -386,7 +386,6 @@ int main(int, char**)
                 geo->Draw(commandList);
             }
 
-
             appSrvHeap->BindHeap(commandList);
             ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
