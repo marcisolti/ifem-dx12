@@ -10,7 +10,8 @@
 namespace GG
 {
 	template <typename T>
-	class ConstantBuffer {
+	class ConstantBuffer 
+	{
 
 		void* mappedPtr;
 		D3D12_GPU_VIRTUAL_ADDRESS address;

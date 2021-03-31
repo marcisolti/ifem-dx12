@@ -196,7 +196,8 @@ namespace GG {
 			uint32_t stride,
 			void* indexData,
 			uint32_t indexDataSizeInBytes,
-			DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT)
+			DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT
+		)
 		{
 			static int id = 0;
 			CD3DX12_HEAP_PROPERTIES heapProp{ D3D12_HEAP_TYPE_UPLOAD };

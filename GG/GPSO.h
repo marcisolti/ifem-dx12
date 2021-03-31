@@ -7,23 +7,18 @@ namespace GG
 	class GPSO
 	{
 
-		ID3D12PipelineState* gpso;
+		com_ptr<ID3D12PipelineState> gpso;
 
 	public:
 
-		GPSO(
-			com_ptr<ID3D12Device> device,
-			com_ptr<ID3D12RootSignature> rootSig,
-			com_ptr<ID3DBlob> vs,
-			com_ptr<ID3DBlob> ps
-		)
+		GPSO(ID3D12Device* device, ID3D12RootSignature* rootSig, ID3DBlob* vs, ID3DBlob* ps)
 		{
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsoDesc;
 			ZeroMemory(&gpsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 
-			gpsoDesc.pRootSignature = rootSig.Get();
-			gpsoDesc.VS = CD3DX12_SHADER_BYTECODE(vs.Get());
-			gpsoDesc.PS = CD3DX12_SHADER_BYTECODE(ps.Get());
+			gpsoDesc.pRootSignature = rootSig;
+			gpsoDesc.VS = CD3DX12_SHADER_BYTECODE(vs);
+			gpsoDesc.PS = CD3DX12_SHADER_BYTECODE(ps);
 
 			// geometry desc
 			D3D12_INPUT_ELEMENT_DESC inputElements[] = {
@@ -49,14 +44,11 @@ namespace GG
 			gpsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			gpsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 
-			ID3D12PipelineState* pso;
 			DX_API("PSOManager: Failed to create GPSO")
-				device->CreateGraphicsPipelineState(&gpsoDesc, IID_PPV_ARGS(&pso));
-			
-			gpso = pso;
+				device->CreateGraphicsPipelineState(&gpsoDesc, IID_PPV_ARGS(gpso.GetAddressOf()));
 		}
 
-		ID3D12PipelineState* Get() { return gpso; }
+		ID3D12PipelineState* Get() { return gpso.Get(); }
 
 	};
 }

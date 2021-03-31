@@ -9,7 +9,8 @@
 
 namespace GG 
 {
-	class DescriptorHeap {
+	class DescriptorHeap 
+	{
 		com_ptr<ID3D12DescriptorHeap> resource;
 		D3D12_DESCRIPTOR_HEAP_TYPE type;
 		uint32_t numDescriptors;
@@ -18,13 +19,8 @@ namespace GG
 		uint32_t increment;
 
 	public:
-		DescriptorHeap(
-			ID3D12Device* device,
-			D3D12_DESCRIPTOR_HEAP_TYPE type,
-			uint32_t numDescriptors = 1,
-			bool shaderVisible = false
-		)
-			: numDescriptors{ numDescriptors }, type{ type }
+		DescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors = 1, bool shaderVisible = false)
+		: numDescriptors{ numDescriptors }, type{ type }
 		{
 			// create descriptor heap
 			D3D12_DESCRIPTOR_HEAP_DESC dhd;
@@ -44,16 +40,13 @@ namespace GG
 
 		~DescriptorHeap() { resource.Reset(); }
 
-		void CreateSrv(
-			ID3D12Device* device,
-			ID3D12Resource* resource,
-			D3D12_SHADER_RESOURCE_VIEW_DESC* srvd,
-			int index
-		) {
+		void CreateSrv(ID3D12Device* device, ID3D12Resource* resource, D3D12_SHADER_RESOURCE_VIEW_DESC* srvd, int index)
+		{
 			device->CreateShaderResourceView(resource, srvd, GetCPUHandle(index));
 		}
 
-		void BindHeap(ID3D12GraphicsCommandList* commandList) {
+		void BindHeap(ID3D12GraphicsCommandList* commandList) 
+		{
 			commandList->SetDescriptorHeaps(1, resource.GetAddressOf());
 		}
 

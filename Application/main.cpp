@@ -95,7 +95,9 @@ static std::vector<com_ptr<ID3D12Resource>>     renderTargets;
 GG::DescriptorHeap*                             dsvHeap;
 static com_ptr<ID3D12Resource>                  depthStencilBuffer;
 
-
+// --- ----
+// --- RENDERING RESOURCES
+// --- ----
 com_ptr<ID3D12RootSignature>        rootSig;
 
 Egg::Cam::FirstPerson::P            camera;
@@ -162,14 +164,14 @@ int main(int, char**)
         );
     }
 
-    // create assets
+    // init resources
     {
         heap = new GG::DescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048, true);
         com_ptr<ID3DBlob> vs = Egg::Shader::LoadCso("Shaders/pbrVS.cso");
         com_ptr<ID3DBlob> ps = Egg::Shader::LoadCso("Shaders/pbrPS.cso");
         rootSig = Egg::Shader::LoadRootSignature(device, vs.Get());
 
-        pso = new GG::GPSO(device, rootSig, vs, ps);
+        pso = new GG::GPSO(device, rootSig.Get(), vs.Get(), ps.Get());
 
         camera = Egg::Cam::FirstPerson::Create()->SetView(Float3(0, 5, -7), Float3(0, 0, 1));
         perFrameCb.CreateResources(device, sizeof(PerFrameCb));
