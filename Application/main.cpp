@@ -25,6 +25,31 @@
 #include <map>
 #include <vector>
 
+#include <thread>
+
+std::vector<double> results;
+
+void Compute()
+{
+    size_t N = 1e8;
+    std::vector<double> sqrts;
+    sqrts.reserve(N);
+    for (size_t i = 0; i < N; ++i)
+    {
+        sqrts.emplace_back( std::sqrt((double)i / 1e6) );
+    }
+    double sum = 0.0;
+    for (auto val : sqrts)
+    {
+        sum += val;
+    }
+    double res = sum / N;
+    results.push_back(res);
+
+    Compute();
+}
+
+
 using namespace Egg::Math;
 
 struct Light
@@ -216,6 +241,8 @@ int main(int, char**)
         frameCtx->fenceValue = fenceValue;
     }
 
+    std::thread t1{ Compute };
+
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
@@ -261,6 +288,11 @@ int main(int, char**)
                 static int counter = 0;
 
                 ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+                for (auto val : results)
+                {
+                    ImGui::Text("%.3f", val);               // Display some text (you can use a format strings too)
+                }
 
                 ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
                 ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
@@ -339,6 +371,7 @@ int main(int, char**)
 
             perObjectCb.Upload();
         }
+
         // populate command list and render
         {
             FrameContext* frameCtx = WaitForNextFrameResources();
