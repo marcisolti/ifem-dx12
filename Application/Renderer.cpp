@@ -94,30 +94,8 @@ void Renderer::Draw()
     dt = std::chrono::duration<float>(timestampEnd - timestampStart).count();
     timestampStart = timestampEnd;
 
-    //thread 1                  thread 2
-                        /*
-                        * draw static geometry
-                        * if(new) copy_geo
-                        * draw dynamic geometry
-                        */
 
-    // step simulator
-    /*
-        <-bcs
-        <-loads
-        ->displacements
-    */
-
-    // draw result
-    /*
-    * update vertices
-    * update normals
-    * new = true
-    */
-
-
-
-                         // update the app
+    // update the app
     {
         // perFrameCb
         camera->Animate(dt);
