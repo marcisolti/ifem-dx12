@@ -37,12 +37,10 @@ namespace GG {
 
 	public:
 
-		std::string path;
 		std::vector<PNT_Vertex> vertices;
 		std::vector<uint32_t> indices;
 
-		Geometry(ID3D12Device* device, std::string filePath, bool deformable = false)
-			: path{ filePath }
+		Geometry(ID3D12Device* device, std::string filePath)
 		{
 			// import geometry from file
 

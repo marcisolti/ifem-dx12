@@ -4,6 +4,8 @@ FrameContext frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 
 void Renderer::StartUp(HWND hwnd)
 {
+    ObjLoader::parseFile("../Media/vega/turtle.veg.obj");
+
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
     {
@@ -40,24 +42,28 @@ void Renderer::StartUp(HWND hwnd)
         );
     }
 
-
     // init resources
     {
         heap = new GG::DescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048, true);
+        
         com_ptr<ID3DBlob> vs = Egg::Shader::LoadCso("Shaders/pbrVS.cso");
         com_ptr<ID3DBlob> ps = Egg::Shader::LoadCso("Shaders/pbrPS.cso");
         rootSig = Egg::Shader::LoadRootSignature(device, vs.Get());
-
-        pso = new GG::GPSO(device, rootSig.Get(), vs.Get(), ps.Get());
 
         using namespace Egg::Math;
         camera = Egg::Cam::FirstPerson::Create()->SetView(Float3(0, 5, -7), Float3(0, 0, 1));
         perFrameCb.CreateResources(device, sizeof(PerFrameCb));
         perObjectCb.CreateResources(device, sizeof(GG::PerObjectCb));
+        
+        pso = new GG::GPSO(device, rootSig.Get(), vs.Get(), ps.Get());
 
-        geo = new GG::Geometry(device, "sphere.fbx");
-        tex = new GG::Tex2D(device, heap, "checkered.png");
-        tex->CreateSrv(device, heap, 0);
+        Entity* sphere = new Entity{ objectCount, device, heap, std::string{"sphere.fbx"}, std::string{"checkered.png"} };
+        entities.push_back(sphere);
+        objectCount++;
+
+        Entity* bunny = new Entity{ objectCount, device, heap, std::string{"bunny.obj"}, std::string{"bunnybase.png"} };
+        entities.push_back(bunny);
+        objectCount++;
     }
 
     // upload textures
@@ -69,7 +75,8 @@ void Renderer::StartUp(HWND hwnd)
         DX_API("Failed to reset command list (UploadResources)")
             commandList->Reset(frameCtx->commandAllocator, nullptr);
 
-        tex->UploadResources(commandList);
+        for(const auto& ent : entities)
+            ent->texture->UploadResources(commandList);
 
         DX_API("Failed to close command list (UploadResources)")
             commandList->Close();
@@ -93,8 +100,8 @@ void Renderer::Draw()
     timestampEnd = clock_type::now();
     dt = std::chrono::duration<float>(timestampEnd - timestampStart).count();
     timestampStart = timestampEnd;
-
-
+    static double T = 0.0;
+    T += dt;
     // update the app
     {
         // perFrameCb
@@ -111,9 +118,17 @@ void Renderer::Draw()
         perFrameCb->nrLights = i;
 
         perFrameCb.Upload();
-
-        perObjectCb->data[0].modelTransform = Float4x4::Identity;
-        perObjectCb->data[0].modelTransformInverse = Float4x4::Identity;
+        
+        Float4x4 t = Float4x4::Identity;
+        t *= Float4x4::Rotation({ 0,1,0 }, T / 2);
+        t *= Float4x4::Translation({ 8,-2,-2 });
+        entities[1]->transform = t;
+        
+        for (const auto& ent : entities)
+        {
+            perObjectCb->data[ent->id].modelTransform = ent->transform;
+            perObjectCb->data[ent->id].modelTransformInverse = ent->transform.Invert();
+        }
 
         perObjectCb.Upload();
     }
@@ -159,10 +174,13 @@ void Renderer::Draw()
             commandList->SetPipelineState(pso->Get());
 
             commandList->SetGraphicsRootConstantBufferView(0, perFrameCb.GetGPUVirtualAddress());
-            commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress());
-            commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(0));
+            for (const auto& ent : entities)
+            {
+                commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress(ent->id));
+                commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(ent->id));
 
-            geo->Draw(commandList);
+                ent->geometry->Draw(commandList);
+            }
         }
 
         appSrvHeap->BindHeap(commandList);
@@ -199,6 +217,9 @@ void Renderer::Draw()
 
 void Renderer::ShutDown(HWND hwnd)
 {
+    for (const auto& entity : entities)
+        delete entity;
+
     WaitForLastSubmittedFrame();
 
     // Cleanup

@@ -18,6 +18,8 @@
 #include <GG/GPSO.h>
 #include <GG/Tex2D.h>
 
+#include "ObjLoader.h"
+
 #include <iostream>
 #include <chrono>
 #include <map>
@@ -62,6 +64,29 @@ struct FrameContext
 	uint64_t                                fenceValue;
 };
 
+struct Entity
+{
+	GG::Geometry* geometry;
+	GG::Tex2D*	  texture;
+	Float4x4 transform;
+	uint32_t id;
+
+	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, const std::string& meshPath, const std::string& texturePath)
+	{
+		this->id = id;
+		geometry = new GG::Geometry(device, meshPath);
+		texture = new GG::Tex2D(device, heap, texturePath);
+		texture->CreateSrv(device, heap, id);
+		
+		transform = Float4x4::Identity;
+	}
+	~Entity()
+	{
+		delete geometry;
+		delete texture;
+	}
+};
+
 class Renderer
 {
 	ID3D12Device* device = nullptr;
@@ -92,11 +117,11 @@ class Renderer
 	D3D12_VIEWPORT viewPort;
 	D3D12_RECT scissorRect;
 	// rtv
-	uint32_t                              NUM_BACK_BUFFERS = 3;
-	GG::DescriptorHeap* rtvHeap;
-	std::vector<com_ptr<ID3D12Resource>>     renderTargets;
-	GG::DescriptorHeap* dsvHeap;
-	com_ptr<ID3D12Resource>                  depthStencilBuffer;
+	uint32_t								NUM_BACK_BUFFERS = 3;
+	GG::DescriptorHeap*						rtvHeap;
+	std::vector<com_ptr<ID3D12Resource>>	renderTargets;
+	GG::DescriptorHeap*						dsvHeap;
+	com_ptr<ID3D12Resource>					depthStencilBuffer;
 
 	// --- ----
 	// --- RENDERING RESOURCES
@@ -111,8 +136,8 @@ class Renderer
 	GG::DescriptorHeap* appSrvHeap;
 
 	GG::GPSO* pso;
-	GG::Geometry* geo;
-	GG::Tex2D* tex;
+	std::vector<Entity*> entities;
+	uint32_t objectCount;
 
 	float dt;
 
