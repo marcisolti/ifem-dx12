@@ -55,48 +55,38 @@ void Renderer::StartUp(HWND hwnd)
         perObjectCb.CreateResources(device, sizeof(GG::PerObjectCb));
         
         pso = new GG::GPSO(device, rootSig.Get(), vs.Get(), ps.Get());
-
-        Entity* sphere = new Entity{ objectCount, device, heap, std::string{"sphere.fbx"}, std::string{"checkered.png"} };
-        entities.push_back(sphere);
-        objectCount++;
-
-        Entity* bunny = new Entity{ objectCount, device, heap, std::string{"bunny.obj"}, std::string{"bunnybase.png"} };
-        entities.push_back(bunny);
-        objectCount++;
-
+        /*
         GG::Geometry* turtle = ObjLoader::parseFile(device, "../Media/vega/turtle.veg.obj");
         Entity* turtlee = new Entity{ objectCount, device, heap, turtle, std::string{"bunnybase.png"} };
         entities.push_back(turtlee);
         objectCount++;
+        */
     }
 
-    // upload textures
-    {
-        FrameContext* frameCtx = WaitForNextFrameResources();
-        UINT backBufferIdx = swapChain->GetCurrentBackBufferIndex();
-        frameCtx->commandAllocator->Reset();
+}
 
-        DX_API("Failed to reset command list (UploadResources)")
-            commandList->Reset(frameCtx->commandAllocator, nullptr);
+void Renderer::UploadTextures()
+{
+    FrameContext* frameCtx = WaitForNextFrameResources();
+    UINT backBufferIdx = swapChain->GetCurrentBackBufferIndex();
+    frameCtx->commandAllocator->Reset();
 
-        for(const auto& ent : entities)
-            ent->texture->UploadResources(commandList);
+    DX_API("Failed to reset command list (UploadResources)")
+        commandList->Reset(frameCtx->commandAllocator, nullptr);
 
-        DX_API("Failed to close command list (UploadResources)")
-            commandList->Close();
+    for (const auto& ent : entities)
+        ent->texture->UploadResources(commandList);
 
-        ID3D12CommandList* commandLists[] = { commandList };
-        commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+    DX_API("Failed to close command list (UploadResources)")
+        commandList->Close();
 
-        UINT64 fenceValue = fenceLastSignaledValue + 1;
-        commandQueue->Signal(fence, fenceValue);
-        fenceLastSignaledValue = fenceValue;
-        frameCtx->fenceValue = fenceValue;
-    }
+    ID3D12CommandList* commandLists[] = { commandList };
+    commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
-    timestampStart = clock_type::now();
-    timestampEnd = timestampStart;
-
+    UINT64 fenceValue = fenceLastSignaledValue + 1;
+    commandQueue->Signal(fence, fenceValue);
+    fenceLastSignaledValue = fenceValue;
+    frameCtx->fenceValue = fenceValue;
 }
 
 void Renderer::Draw()
@@ -234,6 +224,13 @@ void Renderer::ShutDown(HWND hwnd)
     CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
     //::UnregisterClass(wc.lpszClassName, wc.hInstance);
+}
+
+void Renderer::AddEntity(const std::string& meshPath, const std::string& texPath)
+{
+    Entity* e = new Entity{ objectCount, device, heap, meshPath, texPath };
+    entities.push_back(e);
+    objectCount++;
 }
 
 bool Renderer::CreateDeviceD3D(HWND hWnd)

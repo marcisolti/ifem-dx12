@@ -41,6 +41,11 @@ int main(int, char**)
     renderer.StartUp(hwnd);
     app.StartUp();
 
+    renderer.AddEntity("sphere.fbx", "checkered.png");
+    renderer.AddEntity("bunny.obj", "bunnybase.png");
+
+    renderer.UploadTextures();
+
     std::thread t1{ Compute };
     // Main loop
     MSG msg;

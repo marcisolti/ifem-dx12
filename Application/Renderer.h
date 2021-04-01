@@ -161,6 +161,9 @@ public:
 
 	void Draw();
 	void ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void UploadTextures();
+
+	void AddEntity(const std::string& meshPath, const std::string& texPath);
 
 private:
 

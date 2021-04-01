@@ -48,6 +48,7 @@ public:
 		for (std::string line; std::getline(file, line); )
 			parse(line, mesh);
 
+
 		std::vector<PNT_Vertex> vertices;
 		std::vector<int>		indices;
 

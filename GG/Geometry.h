@@ -34,11 +34,9 @@ namespace GG {
 		D3D12_INPUT_LAYOUT_DESC inputLayout;
 		D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-
 	public:
 
 		std::vector<PNT_Vertex> vertices;
-		std::vector<uint32_t> indices;
 
 		Geometry(ID3D12Device* device, std::string filePath)
 		{
@@ -50,6 +48,7 @@ namespace GG {
 			void* indexData;
 			void* data;
 			DXGI_FORMAT indexFormat;
+			std::vector<uint32_t> indices;
 			{
 				std::string path = "../Media/" + filePath;
 
