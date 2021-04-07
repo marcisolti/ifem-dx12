@@ -1,5 +1,8 @@
 #include "Simulator.h"
 
+#include "Solver.h"
+Solver solver;
+
 void Simulator::StartUp(Renderer* renderer, const std::string& modelName)
 {
 	std::string path{ "../Media/vega/" };
@@ -61,7 +64,6 @@ void Simulator::Step()
 	}
 
 	posArray.push_back(currPos);
-
 }
 
 void Simulator::SetDisplayIndex(int index)

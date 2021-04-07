@@ -60,12 +60,14 @@
     </ClCompile>
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Simulator.cpp" />
+    <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Simulator.h" />
+    <ClInclude Include="Solver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

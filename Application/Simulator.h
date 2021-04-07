@@ -4,13 +4,7 @@
 
 #include <string>
 
-#include <Eigen/Dense>
-
-#include "vega/volumetricMesh/volumetricMesh.h"
-#include "vega/volumetricMesh/volumetricMeshLoader.h"
-#include "vega/volumetricMesh/tetMesh.h"
-
-using Vec = Eigen::VectorXd;
+#include "Solver.h"
 
 class Simulator
 {

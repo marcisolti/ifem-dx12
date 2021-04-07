@@ -26,6 +26,14 @@ void App::Update(int& displayIndex, int frameCount)
         int* index = &displayIndex;
         ImGui::SliderInt("Frame", index, 0, frameCount);
 
+        static bool playing = false;
+        if (ImGui::Button("Play/Pause"))
+            playing = !playing;
+
+        if (playing)
+            displayIndex++;
+        
+
         ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
         ImGui::Checkbox("Another Window", &show_another_window);

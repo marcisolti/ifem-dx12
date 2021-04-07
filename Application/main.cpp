@@ -11,22 +11,7 @@ std::vector<double> results;
 
 void Compute()
 {
-    size_t N = 1e8;
-    std::vector<double> sqrts;
-    sqrts.reserve(N);
-    for (size_t i = 0; i < N; ++i)
-    {
-        sqrts.emplace_back( std::sqrt((double)i / 1e6) );
-    }
-    double sum = 0.0;
-    for (auto val : sqrts)
-    {
-        sum += val;
-    }
-    double res = sum / N;
-    results.push_back(res);
-
-    Compute();
+    sim.Step();
 }
 
 using namespace Egg::Math;
@@ -50,7 +35,7 @@ int main(int, char**)
 
     renderer.UploadTextures();
 
-    //std::thread t1{ Compute };
+    std::thread t1{ Compute };
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
@@ -96,7 +81,9 @@ int main(int, char**)
         sim.Step();
         app.Update(displayIndex, frameCount);
         sim.SetDisplayIndex(displayIndex);
-        frameCount++; displayIndex++;
+        if(frameCount == displayIndex)
+            displayIndex++;
+        frameCount++;
         renderer.Draw();
 
     }
