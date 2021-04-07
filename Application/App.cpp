@@ -5,7 +5,7 @@ void App::StartUp()
 
 }
 
-void App::Update(const std::vector<double>& results)
+void App::Update(int& displayIndex, int frameCount)
 {
     // Start the Dear ImGui frame
     ImGui_ImplDX12_NewFrame();
@@ -23,10 +23,8 @@ void App::Update(const std::vector<double>& results)
 
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-        for (auto val : results)
-        {
-            ImGui::Text("%.3f", val);               // Display some text (you can use a format strings too)
-        }
+        int* index = &displayIndex;
+        ImGui::SliderInt("Frame", index, 0, frameCount);
 
         ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state

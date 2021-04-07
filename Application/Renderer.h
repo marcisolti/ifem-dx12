@@ -166,6 +166,7 @@ public:
 
 	void AddEntity(const std::string& meshPath, const std::string& texPath);
 	void AddDeformable(const std::string& meshPath);
+	GG::Geometry* GetDeformableGeo() { return deformableEntity->geometry; }
 
 private:
 

@@ -17,12 +17,6 @@ void Renderer::StartUp(HWND hwnd)
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
-    // init simulator
-    /*
-        --vmesh
-        --smesh
-    */
-
     // Setup Dear ImGui context
     {
         IMGUI_CHECKVERSION();
@@ -110,9 +104,9 @@ void Renderer::Draw()
 
         perFrameCb.Upload();
         
-        Float4x4 t = Float4x4::Identity;
-        t *= Float4x4::Rotation({ 0,1,0 }, T / 2);
-        deformableEntity->transform = t;
+        //Float4x4 t = Float4x4::Identity;
+        //t *= Float4x4::Rotation({ 0,1,0 }, T / 2);
+        //deformableEntity->transform = t;
         
         for (const auto& ent : staticEntities)
         {
@@ -248,7 +242,7 @@ void Renderer::AddDeformable(const std::string& meshPath)
 {
     if (!deformableEntity)
     {
-        GG::Geometry* geo = ObjLoader::parseFile(device, "../Media/vega/" + meshPath);
+        GG::Geometry* geo = ObjLoader::parseFile(device, meshPath);
         deformableEntity = new Entity{ objectCount, device, heap, geo, std::string{"bunnybase.png"} };
         objectCount++;
     }

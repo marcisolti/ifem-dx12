@@ -17,7 +17,7 @@ public:
 	~App() = default;
 
 	void StartUp();
-	void Update(const std::vector<double>& results);
+	void Update(int& displayIndex, int frameCount);
 
 };
 

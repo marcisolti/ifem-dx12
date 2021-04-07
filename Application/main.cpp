@@ -50,12 +50,14 @@ int main(int, char**)
 
     renderer.UploadTextures();
 
-    std::thread t1{ Compute };
+    //std::thread t1{ Compute };
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
 
     // Our state
+    int displayIndex = 0;
+    int frameCount = 0;
     while (msg.message != WM_QUIT)
     {
         // Poll and handle messages (inputs, window resize, etc.)   
@@ -91,8 +93,10 @@ int main(int, char**)
         * new = true
         */
 
-
-        app.Update(results);
+        sim.Step();
+        app.Update(displayIndex, frameCount);
+        sim.SetDisplayIndex(displayIndex);
+        frameCount++; displayIndex++;
         renderer.Draw();
 
     }
