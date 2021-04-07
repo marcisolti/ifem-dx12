@@ -64,6 +64,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="EnergyFunction.h" />
+    <ClInclude Include="Integrator.h" />
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Simulator.h" />

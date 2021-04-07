@@ -13,5 +13,7 @@
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="Solver.h" />
+    <ClInclude Include="EnergyFunction.h" />
+    <ClInclude Include="Integrator.h" />
   </ItemGroup>
 </Project>
