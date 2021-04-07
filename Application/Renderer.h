@@ -146,7 +146,8 @@ class Renderer
 	GG::DescriptorHeap* appSrvHeap;
 
 	GG::GPSO* pso;
-	std::vector<Entity*> entities;
+	std::vector<Entity*> staticEntities;
+	Entity* deformableEntity = nullptr;
 	uint32_t objectCount;
 
 	float dt;
@@ -164,6 +165,7 @@ public:
 	void UploadTextures();
 
 	void AddEntity(const std::string& meshPath, const std::string& texPath);
+	void AddDeformable(const std::string& meshPath);
 
 private:
 

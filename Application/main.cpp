@@ -4,6 +4,9 @@ App app;
 #include "Renderer.h"
 Renderer renderer;
 
+#include "Simulator.h"
+Simulator sim;
+
 std::vector<double> results;
 
 void Compute()
@@ -41,8 +44,9 @@ int main(int, char**)
     renderer.StartUp(hwnd);
     app.StartUp();
 
-    renderer.AddEntity("sphere.fbx", "checkered.png");
-    renderer.AddEntity("bunny.obj", "bunnybase.png");
+    //renderer.AddEntity("sphere.fbx", "checkered.png");
+    //renderer.AddEntity("bunny.obj", "bunnybase.png");
+    sim.StartUp(&renderer, "turtle");
 
     renderer.UploadTextures();
 
