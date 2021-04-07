@@ -13,6 +13,7 @@ class Simulator
 	std::vector<Vec> posArray;
 
 	uint32_t numDOFs;
+	int stepNum;
 
 public:
 	Simulator() = default;
@@ -23,5 +24,6 @@ public:
 
 	void Step();
 	void SetDisplayIndex(int index);
+	int GetStepNum() { return stepNum; }
 };
 

@@ -17,7 +17,7 @@ public:
 	~App() = default;
 
 	void StartUp();
-	void Update(int& displayIndex, int frameCount);
+	void Update(int* displayIndex, int frameCount);
 
 };
 

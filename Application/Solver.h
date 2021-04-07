@@ -51,5 +51,7 @@ private:
 
 	Mat3	ComputeDm(int i);
 	Mat9x12 ComputedFdx(Mat3 DmInv);
+	void AddToKeff(SpMat& Keff, const Mat12& dPdx, int* indices);
+
 };
 

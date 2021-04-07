@@ -11,7 +11,10 @@ std::vector<double> results;
 
 void Compute()
 {
-    sim.Step();
+    while(1)
+    {
+        sim.Step();
+    }
 }
 
 using namespace Egg::Math;
@@ -42,7 +45,6 @@ int main(int, char**)
 
     // Our state
     int displayIndex = 0;
-    int frameCount = 0;
     while (msg.message != WM_QUIT)
     {
         // Poll and handle messages (inputs, window resize, etc.)   
@@ -78,12 +80,9 @@ int main(int, char**)
         * new = true
         */
 
-        sim.Step();
-        app.Update(displayIndex, frameCount);
+        int frameCount = sim.GetStepNum();
+        app.Update(&displayIndex, frameCount);
         sim.SetDisplayIndex(displayIndex);
-        if(frameCount == displayIndex)
-            displayIndex++;
-        frameCount++;
         renderer.Draw();
 
     }

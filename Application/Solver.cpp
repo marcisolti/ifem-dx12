@@ -26,6 +26,7 @@ void Solver::StartUp(const std::string& meshPath)
 	u = Vec::Zero(numDOFs);
 	x = Vec::Zero(numDOFs);
 	v = Vec::Zero(numDOFs);
+	fExt = Vec::Zero(numDOFs);
 
 	for (size_t i = 0; i < mesh->getNumVertices(); ++i)
 	{
@@ -43,7 +44,8 @@ void Solver::StartUp(const std::string& meshPath)
 
 	// BCs, loaded verts, S, spI
 	{
-		std::vector<int> initBCs = {
+		std::vector<int> initBCs = 
+		{
 			1, 3, 6, 8, 11, 12, 13, 15,
 			17, 18, 26, 29, 42, 45, 47,
 			49, 58, 59, 60, 247, 248,
@@ -52,7 +54,7 @@ void Solver::StartUp(const std::string& meshPath)
 
 		loadedVerts =
 		{
-			3 * 296 + 1,
+			3 * 296 + 1
 		};
 
 		S = SpMat(numDOFs, numDOFs);
@@ -114,15 +116,159 @@ void Solver::ShutDown()
 
 Vec Solver::Step()
 {
-	static float dt = 0.f;
-	dt += 1.0 / 60;
+	int substep = 0;
+	static int stepNum = 0;
 
-	for (size_t i = 0; i < numDOFs / 3; ++i)
+	double loadIncrement = -50.0;
+
+	Vec dv;
+	Vec R = Vec::Zero(numDOFs);
+
+	for (auto index : loadedVerts)
 	{
-		x(3 * i + 1) += dt / 5;
+		fExt(index) += loadIncrement;
 	}
 
+	static double T = 0.0;
+	T += h;
+
+	Vec fInt = Vec::Zero(numDOFs);
+	
+	for (;;)
+	{
+		// get Keff
+		SpMat Keff = SpMat(numDOFs, numDOFs);
+		//#pragma omp parallel for
+		for (int i = 0; i < numElements; ++i)
+		{
+			Vec3 v0, v1, v2, v3;
+			int indices[4];
+			{
+				indices[0] = 3 * mesh->getVertexIndex(i, 0);
+				indices[1] = 3 * mesh->getVertexIndex(i, 1);
+				indices[2] = 3 * mesh->getVertexIndex(i, 2);
+				indices[3] = 3 * mesh->getVertexIndex(i, 3);
+
+				v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
+				v1 << x(indices[1] + 0), x(indices[1] + 1), x(indices[1] + 2);
+				v2 << x(indices[2] + 0), x(indices[2] + 1), x(indices[2] + 2);
+				v3 << x(indices[3] + 0), x(indices[3] + 1), x(indices[3] + 2);
+			}
+
+			Mat3 F;
+			{
+				Vec3 ds1 = v1 - v0;
+				Vec3 ds2 = v2 - v0;
+				Vec3 ds3 = v3 - v0;
+
+				Mat3 Ds;
+				Ds <<
+					ds1[0], ds2[0], ds3[0],
+					ds1[1], ds2[1], ds3[1],
+					ds1[2], ds2[2], ds3[2];
+				Mat3 DmInv = DmInvs[i];
+				F = Ds * DmInv;
+			}
+
+			Mat3 P = energyFunction->GetPK1(F);
+			// calculate forces
+			{
+				Vec9 Pv = Flatten(P);
+				Mat9x12 dFdx = dFdxs[i];
+				Vec12 fEl;
+
+				fEl = dFdx.transpose() * Pv;
+
+				fEl *= tetVols[i];
+				//fEl *= -1.0;
+
+				for (int el = 0; el < 4; ++el)
+				{
+					for (int incr = 0; incr < 3; ++incr)
+					{
+						fInt(indices[el] + incr) += fEl(3 * el + incr);
+					}
+				}
+			}
+			// get jacobian
+			{
+
+				Mat9x12 dFdx = dFdxs[i];
+				Mat9 dPdF = energyFunction->GetJacobian();
+				Mat12 dPdx = dFdx.transpose() * dPdF * dFdx;
+
+				dPdx *= -tetVols[i];
+
+				AddToKeff(Keff, dPdx, &indices[0]);
+			}
+		}
+
+		//solve
+		{
+			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
+			double h2 = h * h;
+			double alpha = 0.02;
+
+			// h* f + h ^ 2 * K * v
+			Vec RHS = h * ((fInt + fExt) + h * Keff * v);
+
+			//M - h * alpha * K - h ^ 2 * K
+			SpMat EffectiveMatrix = M - h * alpha * Keff - h2 * Keff;
+
+			// project constaints
+			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+			Vec SystemVec = S * RHS;
+
+			solver.compute(SystemMatrix);
+			Vec dv = solver.solve(SystemVec);
+
+			v.noalias() += dv;
+			u = h * v;
+			x.noalias() += u;
+		}
+
+		/*
+
+		R = fInt - fExt;
+
+		rR = R.norm();
+		rF = fExt.norm();
+
+		std::cout << rR << ' ' << rF << '\n';
+
+		double val = rR / rF;
+
+		std::cout
+			<< "stepNum: " << stepNum << " substep:" << substep++
+			<< " rR / rF: " << val << ", t: " << T << ", f: " << loadVal << '\n';
+
+		if (val > 0.9 && val < 1.1)
+			break;
+		*/
+		std::cout
+			<< "stepNum: " << stepNum << ", ||u||2: " << u.squaredNorm() << '\n';
+		break;
+	}
+	stepNum++;
+
 	return x;
+}
+
+void Solver::AddToKeff(SpMat& Keff, const Mat12 & dPdx, int* indices)
+{
+	for (int x = 0; x < 4; ++x)
+	{
+		for (int y = 0; y < 4; ++y)
+		{
+			for (int innerX = 0; innerX < 3; ++innerX)
+			{
+				for (int innerY = 0; innerY < 3; ++innerY)
+				{
+					Keff.coeffRef(indices[x] + innerX, indices[y] + innerY) += dPdx(3 * x + innerX, 3 * y + innerY);
+				}
+			}
+		}
+	}
 }
 
 Mat3 Solver::ComputeDm(int i)

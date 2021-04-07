@@ -5,7 +5,7 @@ void App::StartUp()
 
 }
 
-void App::Update(int& displayIndex, int frameCount)
+void App::Update(int* displayIndex, int frameCount)
 {
     // Start the Dear ImGui frame
     ImGui_ImplDX12_NewFrame();
@@ -23,16 +23,16 @@ void App::Update(int& displayIndex, int frameCount)
 
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-        int* index = &displayIndex;
-        ImGui::SliderInt("Frame", index, 0, frameCount);
+        ImGui::SliderInt("Frame", displayIndex, 0, frameCount-1);
 
+        /*
         static bool playing = false;
         if (ImGui::Button("Play/Pause"))
             playing = !playing;
 
         if (playing)
             displayIndex++;
-        
+        */
 
         ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
