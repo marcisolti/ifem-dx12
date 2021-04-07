@@ -119,14 +119,12 @@ Vec Solver::Step()
 	int substep = 0;
 	static int stepNum = 0;
 
-	double loadIncrement = -50.0;
-
-	Vec dv;
-	Vec R = Vec::Zero(numDOFs);
+	double loadIncrement = -100.0;
 
 	for (auto index : loadedVerts)
 	{
-		fExt(index) += loadIncrement;
+		if(fExt(index) > -5000.0)
+			fExt(index) += loadIncrement;
 	}
 
 	static double T = 0.0;
@@ -179,7 +177,7 @@ Vec Solver::Step()
 
 				fEl = dFdx.transpose() * Pv;
 
-				fEl *= tetVols[i];
+				fEl *= -tetVols[i];
 				//fEl *= -1.0;
 
 				for (int el = 0; el < 4; ++el)
@@ -207,13 +205,13 @@ Vec Solver::Step()
 		{
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
 			double h2 = h * h;
-			double alpha = 0.02;
+			double alpha = 0.01;
 
 			// h* f + h ^ 2 * K * v
 			Vec RHS = h * ((fInt + fExt) + h * Keff * v);
 
 			//M - h * alpha * K - h ^ 2 * K
-			SpMat EffectiveMatrix = M - h * alpha * Keff - h2 * Keff;
+			SpMat EffectiveMatrix = M - h * ( alpha * Keff + M ) - h2 * Keff;
 
 			// project constaints
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
