@@ -9,9 +9,10 @@
 class Simulator
 {
 	GG::Geometry* surfaceGeo;
-	VolumetricMesh* meshGeo;
-	Vec u, initPos;
+
 	std::vector<Vec> posArray;
+
+	uint32_t numDOFs;
 
 public:
 	Simulator() = default;

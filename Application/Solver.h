@@ -10,13 +10,19 @@ using Vec = Eigen::VectorXd;
 
 class Solver
 {
+	VolumetricMesh* mesh;
+
+	uint32_t numDOFs;
+
+	Vec u, x, v;
+
 public:
 	Solver() = default;
 	~Solver() = default;
 
-	void StartUp();
+	void StartUp(const std::string& meshPath);
 	void ShutDown();
 
-	Vec* Step();
+	Vec Step();
 };
 
