@@ -27,6 +27,7 @@ void Solver::StartUp(const std::string& meshPath)
 	x = Vec::Zero(numDOFs);
 	v = Vec::Zero(numDOFs);
 	fExt = Vec::Zero(numDOFs);
+	R = Vec::Zero(numDOFs);
 
 	for (size_t i = 0; i < mesh->getNumVertices(); ++i)
 	{
@@ -37,7 +38,7 @@ void Solver::StartUp(const std::string& meshPath)
 	}
 
 	integrator = new Integrator;
-	energyFunction = new ARAP{ 200'000, 0.3 };
+	energyFunction = new StableNeoHookean{ 200'000, 0.45 };
 	rho = 1000;
 
 	h = 0.01;
@@ -119,12 +120,24 @@ Vec Solver::Step()
 	int substep = 0;
 	static int stepNum = 0;
 
-	double loadIncrement = -100.0;
+	double loadIncrement = -500.0;
+	static double loadVal = 0.0;
 
 	for (auto index : loadedVerts)
 	{
-		if(fExt(index) > -5000.0)
+		//if (stepNum < 60)
+		if (true)
+		{
 			fExt(index) += loadIncrement;
+			R(index) -= loadIncrement;
+			loadVal += loadIncrement;
+		}
+		else
+		{
+			std::cout << "here\n";
+			fExt(index) = 0.0;
+			loadVal = 0.0;
+		}
 	}
 
 	static double T = 0.0;
@@ -173,8 +186,8 @@ Vec Solver::Step()
 			{
 				Vec9 Pv = Flatten(P);
 				Mat9x12 dFdx = dFdxs[i];
+				
 				Vec12 fEl;
-
 				fEl = dFdx.transpose() * Pv;
 
 				fEl *= -tetVols[i];
@@ -203,6 +216,7 @@ Vec Solver::Step()
 
 		//solve
 		{
+			// backward euler
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
 			double h2 = h * h;
 			double alpha = 0.01;
@@ -216,23 +230,87 @@ Vec Solver::Step()
 			// project constaints
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 			Vec SystemVec = S * RHS;
-
 			solver.compute(SystemMatrix);
 			Vec dv = solver.solve(SystemVec);
 
 			v.noalias() += dv;
 			u = h * v;
 			x.noalias() += u;
+
+			// quasistatic
+			/*
+			SpMat EffectiveMatrix = Keff;
+			Vec RHS = -R;
+
+			// project constaints
+			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+			Vec SystemVec = S * RHS;
+			solver.compute(SystemMatrix);
+			Vec dv = solver.solve(SystemVec);
+			x.noalias() += dv;
+			*/
+
 		}
 
 		/*
+		fInt = Vec::Zero(numDOFs);
+		for (int i = 0; i < numElements; ++i)
+		{
+			Vec3 v0, v1, v2, v3;
+			int indices[4];
+			{
+				indices[0] = 3 * mesh->getVertexIndex(i, 0);
+				indices[1] = 3 * mesh->getVertexIndex(i, 1);
+				indices[2] = 3 * mesh->getVertexIndex(i, 2);
+				indices[3] = 3 * mesh->getVertexIndex(i, 3);
+
+				v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
+				v1 << x(indices[1] + 0), x(indices[1] + 1), x(indices[1] + 2);
+				v2 << x(indices[2] + 0), x(indices[2] + 1), x(indices[2] + 2);
+				v3 << x(indices[3] + 0), x(indices[3] + 1), x(indices[3] + 2);
+			}
+
+			Mat3 F;
+			{
+				Vec3 ds1 = v1 - v0;
+				Vec3 ds2 = v2 - v0;
+				Vec3 ds3 = v3 - v0;
+
+				Mat3 Ds;
+				Ds <<
+					ds1[0], ds2[0], ds3[0],
+					ds1[1], ds2[1], ds3[1],
+					ds1[2], ds2[2], ds3[2];
+				Mat3 DmInv = DmInvs[i];
+				F = Ds * DmInv;
+			}
+
+			Mat3 P = energyFunction->GetPK1(F);
+			// calculate forces
+			{
+				Vec9 Pv = Flatten(P);
+				Mat9x12 dFdx = dFdxs[i];
+
+				Vec12 fEl;
+				fEl = dFdx.transpose() * Pv;
+
+				fEl *= -tetVols[i];
+				//fEl *= -1.0;
+
+				for (int el = 0; el < 4; ++el)
+				{
+					for (int incr = 0; incr < 3; ++incr)
+					{
+						fInt(indices[el] + incr) += fEl(3 * el + incr);
+					}
+				}
+			}
+		}
 
 		R = fInt - fExt;
 
-		rR = R.norm();
-		rF = fExt.norm();
-
-		std::cout << rR << ' ' << rF << '\n';
+		double rR = R.norm();
+		double rF = fExt.norm();
 
 		double val = rR / rF;
 
@@ -243,9 +321,8 @@ Vec Solver::Step()
 		if (val > 0.9 && val < 1.1)
 			break;
 		*/
-		std::cout
-			<< "stepNum: " << stepNum << ", ||u||2: " << u.squaredNorm() << '\n';
 		break;
+
 	}
 	stepNum++;
 

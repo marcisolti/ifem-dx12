@@ -23,7 +23,7 @@ class Solver
 
 	uint32_t numDOFs, numElements, numVertices;
 
-	Vec u, x, v, fExt;
+	Vec u, x, v, fExt, R;
 
 	std::vector<double> tetVols;
 	std::vector<Mat3> DmInvs;
