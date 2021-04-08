@@ -15,5 +15,6 @@
     <ClInclude Include="Solver.h" />
     <ClInclude Include="EnergyFunction.h" />
     <ClInclude Include="Integrator.h" />
+    <ClInclude Include="PerformanceCounter.h" />
   </ItemGroup>
 </Project>

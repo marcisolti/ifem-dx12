@@ -11,6 +11,8 @@
 #include "EnergyFunction.h"
 #include "Integrator.h"
 
+#include "PerformanceCounter.h"
+
 using Vec   = Eigen::VectorXd;
 using SpMat = Eigen::SparseMatrix<double>;
 
@@ -49,9 +51,10 @@ public:
 
 private:
 
+	void AddToKeff(SpMat& Keff, const Mat12& dPdx, int* indices);
+
 	Mat3	ComputeDm(int i);
 	Mat9x12 ComputedFdx(Mat3 DmInv);
-	void AddToKeff(SpMat& Keff, const Mat12& dPdx, int* indices);
 
 };
 

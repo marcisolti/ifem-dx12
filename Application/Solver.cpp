@@ -147,6 +147,7 @@ Vec Solver::Step()
 	
 	for (;;)
 	{
+		PerformanceCounter jacobian;
 		// get Keff
 		SpMat Keff = SpMat(numDOFs, numDOFs);
 		//#pragma omp parallel for
@@ -213,7 +214,10 @@ Vec Solver::Step()
 				AddToKeff(Keff, dPdx, &indices[0]);
 			}
 		}
+		jacobian.StopCounter();
+		std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << '\n';
 
+		PerformanceCounter solution;
 		//solve
 		{
 			// backward euler
@@ -241,6 +245,7 @@ Vec Solver::Step()
 			/*
 			SpMat EffectiveMatrix = Keff;
 			Vec RHS = -R;
+			//Vec RHS = fInt -fExt;
 
 			// project constaints
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
@@ -251,7 +256,8 @@ Vec Solver::Step()
 			*/
 
 		}
-
+		solution.StopCounter();
+		std::cout << "solved in " << solution.GetElapsedTime() << '\n';
 		/*
 		fInt = Vec::Zero(numDOFs);
 		for (int i = 0; i < numElements; ++i)
@@ -308,17 +314,17 @@ Vec Solver::Step()
 		}
 
 		R = fInt - fExt;
-
+		
 		double rR = R.norm();
 		double rF = fExt.norm();
-
 		double val = rR / rF;
 
 		std::cout
 			<< "stepNum: " << stepNum << " substep:" << substep++
 			<< " rR / rF: " << val << ", t: " << T << ", f: " << loadVal << '\n';
 
-		if (val > 0.9 && val < 1.1)
+		//if (val > 0.9 && val < 1.1)
+		if(substep > 4)
 			break;
 		*/
 		break;

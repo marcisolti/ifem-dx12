@@ -67,6 +67,7 @@
     <ClInclude Include="EnergyFunction.h" />
     <ClInclude Include="Integrator.h" />
     <ClInclude Include="ObjLoader.h" />
+    <ClInclude Include="PerformanceCounter.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="Solver.h" />
