@@ -44,7 +44,7 @@ float4 main(VSOutput input) : SV_Target
 		float3 Lunnormalized = lights[i].position - input.worldPosition;
 		float3 L = normalize(Lunnormalized);
 		float sqrDist = dot(Lunnormalized, Lunnormalized);
-		float illuminance = 10000.f * (1.f / sqrDist);
+		float illuminance = 650.f * (1.f / sqrDist);
 
 		float3 H = normalize(V + L);
 		float LdotH = saturate(dot(L, H));

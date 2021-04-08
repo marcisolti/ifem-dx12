@@ -98,7 +98,7 @@ void Renderer::Draw()
 
         int i = 0;
         perFrameCb->lights[0].color = { 1,1,1,1 };
-        perFrameCb->lights[0].position = { 10,10,10,1 };
+        perFrameCb->lights[0].position = { 10,10,15,1 };
         i++;
         perFrameCb->nrLights = i;
 
