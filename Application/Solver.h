@@ -35,7 +35,7 @@ class Solver
 
 	std::vector<int> loadedVerts;
 
-	SpMat M, S, spI;
+	SpMat M, S, spI, Keff;
 
 	Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
 
@@ -44,7 +44,7 @@ public:
 	Solver() = default;
 	~Solver() = default;
 
-	void StartUp(const std::string& meshPath);
+	Vec StartUp(const std::string& meshPath);
 	void ShutDown();
 
 	Vec Step();

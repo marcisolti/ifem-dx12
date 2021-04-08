@@ -1,6 +1,9 @@
 #include "Solver.h"
 
-void Solver::StartUp(const std::string& meshPath)
+#include <cstdlib>
+#include <ctime>
+
+Vec Solver::StartUp(const std::string& meshPath)
 {
 	std::cout << "loading mesh " << meshPath << '\n';
 
@@ -29,16 +32,8 @@ void Solver::StartUp(const std::string& meshPath)
 	fExt = Vec::Zero(numDOFs);
 	R = Vec::Zero(numDOFs);
 
-	for (size_t i = 0; i < mesh->getNumVertices(); ++i)
-	{
-		Vec3d v = mesh->getVertex(i);
-		x(3 * i + 0) = v[0];
-		x(3 * i + 1) = v[1];
-		x(3 * i + 2) = v[2];
-	}
-
 	integrator = new Integrator;
-	energyFunction = new StableNeoHookean{ 200'000, 0.45 };
+	energyFunction = new ARAP{ 200'000, 0.45 };
 	rho = 1000;
 
 	h = 0.01;
@@ -108,6 +103,54 @@ void Solver::StartUp(const std::string& meshPath)
 
 		}
 	}
+
+	Keff = SpMat(numDOFs, numDOFs);
+
+	for (int i = 0; i < numElements; ++i)
+	{
+		PerformanceCounter FandP;
+		Vec3 v0, v1, v2, v3;
+		int indices[4];
+		{
+			indices[0] = 3 * mesh->getVertexIndex(i, 0);
+			indices[1] = 3 * mesh->getVertexIndex(i, 1);
+			indices[2] = 3 * mesh->getVertexIndex(i, 2);
+			indices[3] = 3 * mesh->getVertexIndex(i, 3);
+		}
+
+		Mat12 m;
+		m.setZero();
+
+		AddToKeff(Keff, m, &indices[0]);
+	}
+
+	std::srand(std::time(nullptr)); // use current time as seed for random generator
+	for (size_t i = 0; i < mesh->getNumVertices(); ++i)
+	{
+		/*
+		x(3 * i + 0) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
+		x(3 * i + 1) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5)+2.0;
+		x(3 * i + 2) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
+		
+		Vec3d v = mesh->getVertex(i);
+		x(3 * i + 0) = v[0];
+		x(3 * i + 1) = v[1];
+		x(3 * i + 2) = v[2];
+		*/
+
+		/*
+		Vec3d v = mesh->getVertex(i);
+		x(3 * i + 0) = v[0];
+		x(3 * i + 1) = 0.0;
+		x(3 * i + 2) = v[2];
+		*/
+
+		x(3 * i + 0) = 0.0;
+		x(3 * i + 1) = 0.0;
+		x(3 * i + 2) = 0.0;
+	}
+
+	return x;
 }
 
 void Solver::ShutDown()
@@ -145,14 +188,22 @@ Vec Solver::Step()
 
 	Vec fInt = Vec::Zero(numDOFs);
 	
+	// clear Keff to 0.0
+	for (int k = 0; k < Keff.outerSize(); ++k)
+		for (Eigen::SparseMatrix<double>::InnerIterator it(Keff, k); it; ++it)
+		{
+			it.valueRef() = 0.0;
+		}
+
 	for (;;)
 	{
 		PerformanceCounter jacobian;
-		// get Keff
-		SpMat Keff = SpMat(numDOFs, numDOFs);
-		//#pragma omp parallel for
+		double dPdxTime = 0.0;
+		double AddToKeffTime = 0.0;
+		double FandPval = 0.0;
 		for (int i = 0; i < numElements; ++i)
 		{
+			PerformanceCounter FandP;
 			Vec3 v0, v1, v2, v3;
 			int indices[4];
 			{
@@ -202,25 +253,34 @@ Vec Solver::Step()
 					}
 				}
 			}
+			FandP.StopCounter();
+			FandPval += FandP.GetElapsedTime();
 			// get jacobian
 			{
-
+				PerformanceCounter dPdxCounter;
 				Mat9x12 dFdx = dFdxs[i];
 				Mat9 dPdF = energyFunction->GetJacobian();
 				Mat12 dPdx = dFdx.transpose() * dPdF * dFdx;
 
 				dPdx *= -tetVols[i];
+				dPdxCounter.StopCounter();
+				dPdxTime += dPdxCounter.GetElapsedTime();
 
+				PerformanceCounter KeffCounter;
 				AddToKeff(Keff, dPdx, &indices[0]);
+				KeffCounter.StopCounter();
+				AddToKeffTime += KeffCounter.GetElapsedTime();
 			}
 		}
 		jacobian.StopCounter();
-		std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << '\n';
+		std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << ", F and P: " << FandPval 
+			<< ", dPdx time: " << dPdxTime << " AddToKeffTime: " << AddToKeffTime << '\n';
 
 		PerformanceCounter solution;
 		//solve
 		{
 			// backward euler
+			/*
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
 			double h2 = h * h;
 			double alpha = 0.01;
@@ -242,22 +302,51 @@ Vec Solver::Step()
 			x.noalias() += u;
 
 			// quasistatic
-			/*
 			SpMat EffectiveMatrix = Keff;
 			Vec RHS = -R;
 			//Vec RHS = fInt -fExt;
+
+			// project constaints
+			solver.compute(SystemMatrix);
+			Vec dv = solver.solve(SystemVec);
+			x.noalias() += dv;
+			*/
+			
+
+			// optimization
+			SpMat EffectiveMatrix = Keff;
+			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+			Vec SystemVec = S * -fInt;
+			solver.compute(SystemMatrix);
+			Vec u = solver.solve(SystemVec);
+			x.noalias() += 0.000'001 * u;
+
+			// optimization but with inertia
+			/*
+			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
+			h = 0.000'01;
+			double h2 = h * h;
+			double alpha = 0.02;
+			// h* f + h ^ 2 * K * v
+			Vec RHS = h * ((-fInt) + h * Keff * v);
+
+			//M - h * alpha * K - h ^ 2 * K
+			SpMat EffectiveMatrix = M - h * (alpha * Keff + M) - h2 * Keff;
 
 			// project constaints
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 			Vec SystemVec = S * RHS;
 			solver.compute(SystemMatrix);
 			Vec dv = solver.solve(SystemVec);
-			x.noalias() += dv;
-			*/
 
+			v.noalias() += dv;
+			u = h * v;
+			x.noalias() += u;
+			*/
 		}
 		solution.StopCounter();
 		std::cout << "solved in " << solution.GetElapsedTime() << '\n';
+		std::cout << "||f||^2= " << fInt.squaredNorm() << '\n';
 		/*
 		fInt = Vec::Zero(numDOFs);
 		for (int i = 0; i < numElements; ++i)
@@ -328,7 +417,6 @@ Vec Solver::Step()
 			break;
 		*/
 		break;
-
 	}
 	stepNum++;
 
