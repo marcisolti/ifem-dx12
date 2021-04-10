@@ -26,14 +26,14 @@ Vec Solver::StartUp(const std::string& meshPath)
 	numDOFs = 3 * numVertices;
 	numElements = mesh->getNumElements();
 
-	u = Vec::Zero(numDOFs);
+	u_0 = Vec::Zero(numDOFs);
 	x = Vec::Zero(numDOFs);
 	v = Vec::Zero(numDOFs);
 	fExt = Vec::Zero(numDOFs);
 	R = Vec::Zero(numDOFs);
 
 	integrator = new Integrator;
-	energyFunction = new ARAP{ 1'000'000, 0.4 };
+	energyFunction = new ARAP{ 1'000'000, 0.35 };
 	rho = 1000;
 
 	h = 0.01;
@@ -132,18 +132,18 @@ Vec Solver::StartUp(const std::string& meshPath)
 		x(3 * i + 1) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5)+2.0;
 		x(3 * i + 2) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
 		
-		*/
 		Vec3d v = mesh->getVertex(i);
 		x(3 * i + 0) = v[0];
 		x(3 * i + 1) = v[1];
 		x(3 * i + 2) = v[2];
+		*/
 
-		/*
 		Vec3d v = mesh->getVertex(i);
-		x(3 * i + 0) = v[0];
-		x(3 * i + 1) = 0.0;
+		x(3 * i + 0) = 0.0;
+		x(3 * i + 1) = v[1];
 		x(3 * i + 2) = v[2];
 
+		/*
 		x(3 * i + 0) = 0.0;
 		x(3 * i + 1) = 0.0;
 		x(3 * i + 2) = 0.0;
@@ -163,7 +163,7 @@ Vec Solver::Step()
 	int substep = 0;
 	static int stepNum = 0;
 
-	double loadIncrement = 200.0;
+	double loadIncrement = 0.0;
 	static double loadVal = 0.0;
 
 	for (auto index : loadedVerts)
@@ -280,6 +280,7 @@ Vec Solver::Step()
 		//solve
 		{
 			// backward euler
+			/*
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
 			double h2 = h * h;
 			double alpha = 0.01;
@@ -301,7 +302,6 @@ Vec Solver::Step()
 			x.noalias() += u;
 
 			// quasistatic
-			/*
 			SpMat EffectiveMatrix = Keff;
 			Vec RHS = -R;
 			//Vec RHS = fInt -fExt;
@@ -314,24 +314,28 @@ Vec Solver::Step()
 			
 
 			// optimization
-			/*
+			h = 0.000'001;
 			SpMat EffectiveMatrix = Keff;
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-			Vec SystemVec = S * -fInt;
+			Vec SystemVec = S * (-fInt);
+			//Vec SystemVec = S * ( -fInt - M*( u_0 * 0.000'001 ) );
 			solver.compute(SystemMatrix);
 			Vec u = solver.solve(SystemVec);
-			x.noalias() += 0.000'001 * u;
+			u_0 = u;
+			x.noalias() += h * u;
 
 			// optimization but with inertia
+			/*
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
-			h = 0.000'01;
+			h = 0.001;
 			double h2 = h * h;
 			double alpha = 0.02;
 			// h* f + h ^ 2 * K * v
 			Vec RHS = h * ((-fInt) + h * Keff * v);
 
 			//M - h * alpha * K - h ^ 2 * K
-			SpMat EffectiveMatrix = M - h * (alpha * Keff + M) - h2 * Keff;
+			//SpMat EffectiveMatrix = M - h * (alpha * Keff + M) - h2 * Keff;
+			SpMat EffectiveMatrix = M - h * (alpha * Keff) - h2 * Keff;
 
 			// project constaints
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
