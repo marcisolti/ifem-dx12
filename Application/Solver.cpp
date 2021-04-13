@@ -139,8 +139,8 @@ Vec Solver::StartUp(const std::string& meshPath)
 		*/
 
 		Vec3d v = mesh->getVertex(i);
-		x(3 * i + 0) = 0.0;
-		x(3 * i + 1) = v[1];
+		x(3 * i + 0) = v[0];
+		x(3 * i + 1) = 0.0;
 		x(3 * i + 2) = v[2];
 
 		/*
@@ -163,6 +163,7 @@ Vec Solver::Step()
 	int substep = 0;
 	static int stepNum = 0;
 
+	//double loadIncrement = 800.0;
 	double loadIncrement = 0.0;
 	static double loadVal = 0.0;
 
