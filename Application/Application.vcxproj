@@ -49,7 +49,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>vega.lib;Egg.lib;GG.lib;Physics.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vega.lib;Egg.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -63,6 +63,11 @@
     <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\GG\ConstantBuffer.hpp" />
+    <ClInclude Include="..\GG\DescriptorHeap.h" />
+    <ClInclude Include="..\GG\Geometry.h" />
+    <ClInclude Include="..\GG\GPSO.h" />
+    <ClInclude Include="..\GG\Tex2D.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="EnergyFunction.h" />
     <ClInclude Include="Integrator.h" />

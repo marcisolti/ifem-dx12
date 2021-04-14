@@ -16,5 +16,10 @@
     <ClInclude Include="EnergyFunction.h" />
     <ClInclude Include="Integrator.h" />
     <ClInclude Include="PerformanceCounter.h" />
+    <ClInclude Include="..\GG\ConstantBuffer.hpp" />
+    <ClInclude Include="..\GG\DescriptorHeap.h" />
+    <ClInclude Include="..\GG\Geometry.h" />
+    <ClInclude Include="..\GG\GPSO.h" />
+    <ClInclude Include="..\GG\Tex2D.h" />
   </ItemGroup>
 </Project>
