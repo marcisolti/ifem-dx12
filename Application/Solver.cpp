@@ -33,7 +33,8 @@ Vec Solver::StartUp(const std::string& meshPath)
 	R = Vec::Zero(numDOFs);
 
 	integrator = new Integrator;
-	energyFunction = new ARAP{ 1'000'000, 0.35 };
+	//energyFunction = new ARAP{ 1'000'000, 0.35 };
+	energyFunction = new ARAP{ 200'000, 0.45 };
 	rho = 1000;
 
 	h = 0.01;
@@ -131,19 +132,18 @@ Vec Solver::StartUp(const std::string& meshPath)
 		x(3 * i + 0) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
 		x(3 * i + 1) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5)+2.0;
 		x(3 * i + 2) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
-		
+		*/
 		Vec3d v = mesh->getVertex(i);
 		x(3 * i + 0) = v[0];
 		x(3 * i + 1) = v[1];
 		x(3 * i + 2) = v[2];
-		*/
 
+		/*
 		Vec3d v = mesh->getVertex(i);
 		x(3 * i + 0) = v[0];
 		x(3 * i + 1) = 0.0;
 		x(3 * i + 2) = v[2];
 
-		/*
 		x(3 * i + 0) = 0.0;
 		x(3 * i + 1) = 0.0;
 		x(3 * i + 2) = 0.0;
@@ -163,18 +163,22 @@ Vec Solver::Step()
 	int substep = 0;
 	static int stepNum = 0;
 
-	//double loadIncrement = 800.0;
-	double loadIncrement = 0.0;
+	double loadIncrement = 100.0;
+	//double loadIncrement = 0.00001;
+	//double loadIncrement = 0.0;
 	static double loadVal = 0.0;
+
+	if(loadVal <= 10'000)
+		loadVal += loadIncrement;
 
 	for (auto index : loadedVerts)
 	{
 		//if (true)
-		if (stepNum < 150)
+		if (stepNum < 50)
 		{
 			fExt(index) += loadIncrement;
 			R(index) -= loadIncrement;
-			loadVal += loadIncrement;
+			//fExt(index) = loadVal;
 		}
 		else
 		{
@@ -275,22 +279,22 @@ Vec Solver::Step()
 		}
 		jacobian.StopCounter();
 		std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << ", F and P: " << FandPval 
-			<< ", dPdx time: " << dPdxTime << " AddToKeffTime: " << AddToKeffTime << '\n';
+			<< ", dPdx time: " << dPdxTime << " AddToKeffTime: " << AddToKeffTime << "; ";
 
 		PerformanceCounter solution;
 		//solve
 		{
 			// backward euler
-			/*
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
 			double h2 = h * h;
-			double alpha = 0.01;
+			double alpha = 0;
+			double beta = 0;
 
 			// h* f + h ^ 2 * K * v
 			Vec RHS = h * ((fInt + fExt) + h * Keff * v);
 
 			//M - h * alpha * K - h ^ 2 * K
-			SpMat EffectiveMatrix = M - h * ( alpha * Keff + M ) - h2 * Keff;
+			SpMat EffectiveMatrix = M - h * ( alpha * Keff + beta * M ) - h2 * Keff;
 
 			// project constaints
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
@@ -301,29 +305,32 @@ Vec Solver::Step()
 			v.noalias() += dv;
 			u = h * v;
 			x.noalias() += u;
+			/*
+			*/
 
 			// quasistatic
-			SpMat EffectiveMatrix = Keff;
-			Vec RHS = -R;
-			//Vec RHS = fInt -fExt;
+			/*
+			SpMat SystemMatrix = S * Keff * S + spI - S;
+			Vec SystemVec = S * (-fInt + fExt);
 
 			// project constaints
 			solver.compute(SystemMatrix);
 			Vec dv = solver.solve(SystemVec);
-			x.noalias() += dv;
+			x.noalias() += 0.01 * dv;
 			*/
-			
 
 			// optimization
+			/*
 			h = 0.000'001;
 			SpMat EffectiveMatrix = Keff;
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-			Vec SystemVec = S * (-fInt);
+			Vec SystemVec = S * (-fInt+fExt);
 			//Vec SystemVec = S * ( -fInt - M*( u_0 * 0.000'001 ) );
 			solver.compute(SystemMatrix);
 			Vec u = solver.solve(SystemVec);
 			u_0 = u;
 			x.noalias() += h * u;
+			*/
 
 			// optimization but with inertia
 			/*
@@ -347,10 +354,34 @@ Vec Solver::Step()
 			v.noalias() += dv;
 			u = h * v;
 			x.noalias() += u;
+
+			//R += fInt;
+			
+			h = 0.001;
+			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
+			double h2 = h * h;
+			double alpha = 0.01;
+
+			// h* f + h ^ 2 * K * v
+			Vec RHS = h * ((fInt) + h * Keff * v);
+
+			//M - h * alpha * K - h ^ 2 * K
+			SpMat EffectiveMatrix = M - h * (alpha * Keff + M) - h2 * Keff;
+
+			// project constaints
+			//SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+			//Vec SystemVec = S * RHS;
+			solver.compute(EffectiveMatrix);
+			Vec dv = solver.solve(RHS);
+
+			v.noalias() += dv;
+			u = h * v;
+			x.noalias() += u;
 			*/
+
 		}
 		solution.StopCounter();
-		std::cout << "solved in " << solution.GetElapsedTime() << '\n';
+		std::cout << "solved in " << solution.GetElapsedTime() << ' ';
 		std::cout << "||f||^2= " << fInt.squaredNorm() << '\n';
 		/*
 		fInt = Vec::Zero(numDOFs);
@@ -406,7 +437,6 @@ Vec Solver::Step()
 				}
 			}
 		}
-
 		R = fInt - fExt;
 		
 		double rR = R.norm();
@@ -421,7 +451,8 @@ Vec Solver::Step()
 		if(substep > 4)
 			break;
 		*/
-		break;
+		//if(substep++ > 4)
+			break;
 	}
 	stepNum++;
 
