@@ -30,22 +30,54 @@ int main(int, char**)
     config["sim"] = 
     {
         { "integrator", "0" },
-        { "model", "turtle" },
-        { "loadSteps", 
+        { "stepSize",   0.01 },
+        { "model",      "turtle" },
+        { "material", 
             {
-                {
-                    {"t", 1.0},
-                    {"f", 10'000.0}
-                },
-                {
-                    {"t", 1.0},
-                    {"f", 10'000.0}
-                }
+                {"energyFunction", "ARAP"},
+                {"E", 1.0e6},
+                {"nu", 0.45}
             }
         },
+        { "loadCases",
+            {
+                { "nodes", { 3 * 296 + 2 }},
+                { "loadSteps", 
+                    {
+                        {
+                            {"t", 0.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 0.2},
+                            {"f", 50'000.0}
+                        },
+                        {
+                            {"t", 0.3},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 2.5},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                    }
+                },
+            },
+        },
+        { "BCs", 
+            {
+                1, 3, 6, 8, 11, 12, 13, 15,
+                17, 18, 26, 29, 42, 45, 47,
+                49, 58, 59, 60, 247, 248,
+                256, 265
+            }
+        }
     };
 
-    std::cout << config["sim"]["loadSteps"][0]["t"] << '\n';
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, "ImGui Example", NULL };

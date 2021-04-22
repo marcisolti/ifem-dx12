@@ -5,56 +5,61 @@
 
 Vec Solver::StartUp(const json& config)
 {
-
-	std::string meshPath = "../Media/vega/" + std::string{ config["sim"]["model"] } +".veg";
-	std::cout << "loading mesh " << meshPath << '\n';
-
-	mesh = VolumetricMeshLoader::load(meshPath.c_str());
-
-	if (!mesh)
+	// read config
 	{
-		std::cout << "fail! terminating\n";
-		std::exit(420);
-	}
-	else
-	{
-		std::cout << "success! num elements: "
-			<< mesh->getNumElements()
-			<< ";  num vertices: "
-			<< mesh->getNumVertices() << ";\n";
+		integrator	= config["sim"]["integrator"];
+		h			= config["sim"]["stepSize"];
+		interpolator = new Interpolator{ config };
+
+		// load mesh
+		{
+			std::string meshPath = "../Media/vega/" + std::string{ config["sim"]["model"] } + ".veg";
+			std::cout << "loading mesh " << meshPath << '\n';
+
+			mesh = VolumetricMeshLoader::load(meshPath.c_str());
+
+			if (!mesh)
+			{
+				std::cout << "fail! terminating\n";
+				std::exit(420);
+			}
+			else
+			{
+				std::cout << "success! num elements: "
+					<< mesh->getNumElements()
+					<< ";  num vertices: "
+					<< mesh->getNumVertices() << ";\n";
+			}
+		}
+
+		// set material
+		{
+			double E  = config["sim"]["material"]["E"];
+			double nu = config["sim"]["material"]["nu"];
+			energyFunction = new ARAP{ E, nu };
+		}
+
+		for(int i = 0; i < config["sim"]["BCs"].size(); ++i)
+			BCs.push_back(config["sim"]["BCs"][i]);
+
+		for (int i = 0; i < config["sim"]["loadCases"]["nodes"].size(); ++i)
+			loadedVerts.push_back(config["sim"]["loadCases"]["nodes"][i]);
+
 	}
 
 	numVertices = mesh->getNumVertices();
 	numDOFs = 3 * numVertices;
 	numElements = mesh->getNumElements();
 
-	u_0 = Vec::Zero(numDOFs);
 	x = Vec::Zero(numDOFs);
 	v = Vec::Zero(numDOFs);
 	fExt = Vec::Zero(numDOFs);
-	R = Vec::Zero(numDOFs);
 
-	integrator = new Integrator;
 	//energyFunction = new ARAP{ 1'000'000, 0.35 };
-	energyFunction = new ARAP{ 5'000'000, 0.45 };
 	rho = 1000;
-
-	h = 0.005;
 
 	// BCs, loaded verts, S, spI
 	{
-		std::vector<int> initBCs = 
-		{
-			1, 3, 6, 8, 11, 12, 13, 15,
-			17, 18, 26, 29, 42, 45, 47,
-			49, 58, 59, 60, 247, 248,
-			256, 265
-		};
-
-		loadedVerts =
-		{
-			3 * 296 + 2
-		};
 
 		S = SpMat(numDOFs, numDOFs);
 		spI = SpMat(numDOFs, numDOFs);
@@ -62,7 +67,7 @@ Vec Solver::StartUp(const json& config)
 		S.setIdentity();
 		spI.setIdentity();
 
-		for (auto bc : initBCs)
+		for (auto bc : BCs)
 		{
 			int index = 3 * (bc - 1);
 			S.coeffRef(index + 0, index + 0) = 0.0;
@@ -107,24 +112,25 @@ Vec Solver::StartUp(const json& config)
 		}
 	}
 
-	Keff = SpMat(numDOFs, numDOFs);
-
-	for (int i = 0; i < numElements; ++i)
+	// create Keff
 	{
-		PerformanceCounter FandP;
-		Vec3 v0, v1, v2, v3;
-		int indices[4];
+		Keff = SpMat(numDOFs, numDOFs);
+		for (int i = 0; i < numElements; ++i)
 		{
-			indices[0] = 3 * mesh->getVertexIndex(i, 0);
-			indices[1] = 3 * mesh->getVertexIndex(i, 1);
-			indices[2] = 3 * mesh->getVertexIndex(i, 2);
-			indices[3] = 3 * mesh->getVertexIndex(i, 3);
+			Vec3 v0, v1, v2, v3;
+			int indices[4];
+			{
+				indices[0] = 3 * mesh->getVertexIndex(i, 0);
+				indices[1] = 3 * mesh->getVertexIndex(i, 1);
+				indices[2] = 3 * mesh->getVertexIndex(i, 2);
+				indices[3] = 3 * mesh->getVertexIndex(i, 3);
+			}
+
+			Mat12 m;
+			m.setZero();
+
+			AddToKeff(Keff, m, &indices[0]);
 		}
-
-		Mat12 m;
-		m.setZero();
-
-		AddToKeff(Keff, m, &indices[0]);
 	}
 
 	std::srand(std::time(nullptr)); // use current time as seed for random generator
@@ -163,37 +169,28 @@ void Solver::ShutDown()
 Vec Solver::Step()
 {
 	int substep = 0;
-	static int stepNum = 0;
 
+	/*
 	double loadIncrement = 200.0;
-	//double loadIncrement = 0.00001;
-	//double loadIncrement = 0.0;
-	static double loadVal = 0.0;
 
 	if(loadVal <= 50'000)
 		loadVal += loadIncrement;
+		
+	if (stepNum > 200)
+		loadVal = 0.0;
 
 	for (auto index : loadedVerts)
-	{
-		//if (true)
-		if (stepNum < 200)
-		{
-			fExt(index) += loadIncrement;
-			R(index) -= loadIncrement;
-			//fExt(index) = loadVal;
-		}
-		else
-		{
-			std::cout << "here\n";
-			fExt(index) = 0.0;
-			loadVal = 0.0;
-		}
-	}
+		fExt(index) = loadVal;
+	*/
 
-	static double T = 0.0;
 	T += h;
 
-	Vec fInt = Vec::Zero(numDOFs);
+	loadVal = interpolator->get(T);
+	for (auto index : loadedVerts)
+		fExt(index) = loadVal;
+
+	std::cout << "T: " << T << "; fExt: " << loadVal << "; ";
+
 	
 	// clear Keff to 0.0
 	for (int k = 0; k < Keff.outerSize(); ++k)
@@ -202,6 +199,7 @@ Vec Solver::Step()
 			it.valueRef() = 0.0;
 		}
 
+	Vec fInt = Vec::Zero(numDOFs);
 	for (;;)
 	{
 		PerformanceCounter jacobian;
@@ -286,29 +284,30 @@ Vec Solver::Step()
 		PerformanceCounter solution;
 		//solve
 		{
-			// backward euler
-			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
-			double h2 = h * h;
-			double alpha = 0.01;
-			double beta = 5.0;
+			if (integrator[0] == '0')
+			{
+				// backward euler
+				// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
+				double h2 = h * h;
+				double alpha = 0.01;
+				double beta = 5.0;
 
-			// h* f + h ^ 2 * K * v
-			Vec RHS = h * ((fInt + fExt) + h * Keff * v);
+				// h* f + h ^ 2 * K * v
+				Vec RHS = h * ((fInt + fExt) + h * Keff * v);
 
-			//M - h * alpha * K - h ^ 2 * K
-			SpMat EffectiveMatrix = M - h * ( alpha * Keff + beta * M ) - h2 * Keff;
+				//M - h * alpha * K - h ^ 2 * K
+				SpMat EffectiveMatrix = M - h * (alpha * Keff + beta * M) - h2 * Keff;
 
-			// project constaints
-			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-			Vec SystemVec = S * RHS;
-			solver.compute(SystemMatrix);
-			Vec dv = solver.solve(SystemVec);
+				// project constaints
+				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+				Vec SystemVec = S * RHS;
+				solver.compute(SystemMatrix);
+				Vec dv = solver.solve(SystemVec);
 
-			v.noalias() += dv;
-			u = h * v;
-			x.noalias() += u;
-			/*
-			*/
+				v.noalias() += dv;
+				u = h * v;
+				x.noalias() += u;
+			}
 
 			// quasistatic
 			/*
