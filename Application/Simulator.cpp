@@ -3,14 +3,15 @@
 #include "Solver.h"
 Solver solver;
 
-void Simulator::StartUp(Renderer* renderer, const std::string& modelName)
+void Simulator::StartUp(Renderer* renderer, const json& config)
 {
 	stepNum = 0;
-	std::string path{ "../Media/vega/" };
+	const std::string path{ "../Media/vega/" };
+	const std::string modelName = config["sim"]["model"];
     renderer->AddDeformable(path + modelName + ".veg.obj");
     surfaceGeo = renderer->GetDeformableGeo();
 
-	Vec initPos = solver.StartUp(path + modelName + ".veg");
+	Vec initPos = solver.StartUp(config);
 
 	numDOFs = 3 * surfaceGeo->vertices.size();
 	

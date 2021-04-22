@@ -3,6 +3,8 @@
 #include "Renderer.h"
 
 #include <string>
+#include "Common/nlohmann/json.hpp"
+using json = nlohmann::json;
 
 #include "Solver.h"
 
@@ -19,7 +21,7 @@ public:
 	Simulator() = default;
 	~Simulator()= default;
 
-	void StartUp(Renderer* renderer, const std::string& modelName);
+	void StartUp(Renderer* renderer, const json& config);
 	void ShutDown();
 
 	void Step();

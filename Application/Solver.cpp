@@ -3,8 +3,10 @@
 #include <cstdlib>
 #include <ctime>
 
-Vec Solver::StartUp(const std::string& meshPath)
+Vec Solver::StartUp(const json& config)
 {
+
+	std::string meshPath = "../Media/vega/" + std::string{ config["sim"]["model"] } +".veg";
 	std::cout << "loading mesh " << meshPath << '\n';
 
 	mesh = VolumetricMeshLoader::load(meshPath.c_str());
@@ -34,10 +36,10 @@ Vec Solver::StartUp(const std::string& meshPath)
 
 	integrator = new Integrator;
 	//energyFunction = new ARAP{ 1'000'000, 0.35 };
-	energyFunction = new ARAP{ 200'000, 0.45 };
+	energyFunction = new ARAP{ 5'000'000, 0.45 };
 	rho = 1000;
 
-	h = 0.01;
+	h = 0.005;
 
 	// BCs, loaded verts, S, spI
 	{
@@ -163,18 +165,18 @@ Vec Solver::Step()
 	int substep = 0;
 	static int stepNum = 0;
 
-	double loadIncrement = 100.0;
+	double loadIncrement = 200.0;
 	//double loadIncrement = 0.00001;
 	//double loadIncrement = 0.0;
 	static double loadVal = 0.0;
 
-	if(loadVal <= 10'000)
+	if(loadVal <= 50'000)
 		loadVal += loadIncrement;
 
 	for (auto index : loadedVerts)
 	{
 		//if (true)
-		if (stepNum < 50)
+		if (stepNum < 200)
 		{
 			fExt(index) += loadIncrement;
 			R(index) -= loadIncrement;
@@ -287,8 +289,8 @@ Vec Solver::Step()
 			// backward euler
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
 			double h2 = h * h;
-			double alpha = 0;
-			double beta = 0;
+			double alpha = 0.01;
+			double beta = 5.0;
 
 			// h* f + h ^ 2 * K * v
 			Vec RHS = h * ((fInt + fExt) + h * Keff * v);

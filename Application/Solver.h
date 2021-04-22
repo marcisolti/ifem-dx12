@@ -10,6 +10,8 @@
 
 #include "EnergyFunction.h"
 #include "Integrator.h"
+#include "Common/nlohmann/json.hpp"
+using json = nlohmann::json;
 
 #include "PerformanceCounter.h"
 
@@ -44,7 +46,7 @@ public:
 	Solver() = default;
 	~Solver() = default;
 
-	Vec StartUp(const std::string& meshPath);
+	Vec StartUp(const json& config);
 	void ShutDown();
 
 	Vec Step();

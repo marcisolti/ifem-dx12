@@ -9,6 +9,9 @@ Simulator sim;
 
 std::vector<double> results;
 
+#include "Common/nlohmann/json.hpp"
+using json = nlohmann::json;
+
 void Compute()
 {
     while(1)
@@ -23,6 +26,26 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 int main(int, char**)
 {
+    json config;
+    config["sim"] = 
+    {
+        { "integrator", "0" },
+        { "model", "turtle" },
+        { "loadSteps", 
+            {
+                {
+                    {"t", 1.0},
+                    {"f", 10'000.0}
+                },
+                {
+                    {"t", 1.0},
+                    {"f", 10'000.0}
+                }
+            }
+        },
+    };
+
+    std::cout << config["sim"]["loadSteps"][0]["t"] << '\n';
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, "ImGui Example", NULL };
@@ -34,7 +57,7 @@ int main(int, char**)
 
     //renderer.AddEntity("sphere.fbx", "checkered.png");
     //renderer.AddEntity("bunny.obj", "bunnybase.png");
-    sim.StartUp(&renderer, "turtle");
+    sim.StartUp(&renderer, config);
 
     renderer.UploadTextures();
 
