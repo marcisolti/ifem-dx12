@@ -38,7 +38,11 @@ Vec Solver::StartUp(const json& config)
 			double E  = config["sim"]["material"]["E"];
 			double nu = config["sim"]["material"]["nu"];
 			rho		  = config["sim"]["material"]["rho"];
-			energyFunction = new ARAP{ E, nu };
+			const std::string energyName = config["sim"]["material"]["energyFunction"];
+			if (energyName == "ARAP")
+				energyFunction = new ARAP{ E, nu };
+			else if (energyName == "SNH")
+				energyFunction = new StableNeoHookean{ E, nu };
 		}
 
 		for(int i = 0; i < config["sim"]["BCs"].size(); ++i)
@@ -311,7 +315,7 @@ Vec Solver::Step()
 			}
 			else if (integrator[0] == '1')
 			{
-				double factor = 0.000'1;
+				double factor = 1.0;
 				SpMat EffectiveMatrix = Keff;
 				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 				Vec SystemVec = S * (-fInt + fExt);
@@ -464,7 +468,7 @@ Vec Solver::Step()
 		if(substep > 4)
 			break;
 		*/
-		if(substep++ > numSubsteps)
+		if(++substep > numSubsteps)
 			break;
 	}
 

@@ -30,15 +30,17 @@ int main(int, char**)
     config["sim"] = 
     {
         { "integrator", "1" },
-        { "stepSize",   0.01},
-        { "numSubsteps",   5},
+        { "stepSize",   0.01 },
+        { "numSubsteps",   1 },
         { "model",      "turtle" },
         { "material", 
             {
-                {"energyFunction", "ARAP"},
+                {"energyFunction", "SNH"},
                 {"E", 1.0e6},
                 {"nu", 0.45},
-                {"rho", 1000.0}
+                {"rho", 1000.0},
+                {"alpha", 0.2},
+                {"beta", 2.0},
             }
         },
         { "loadCases",
@@ -51,11 +53,11 @@ int main(int, char**)
                             {"f", 0.0}
                         },
                         {
-                            {"t", 0.2},
-                            {"f", 50'000.0}
+                            {"t", 0.3},
+                            {"f", 500'000.0}
                         },
                         {
-                            {"t", 0.3},
+                            {"t", 0.4},
                             {"f", 0.0}
                         },
                         {
