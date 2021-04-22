@@ -11,6 +11,8 @@ Vec Solver::StartUp(const json& config)
 		h			= config["sim"]["stepSize"];
 		numSubsteps = config["sim"]["numSubsteps"];
 		interpolator = new Interpolator{ config };
+		alpha		 = config["sim"]["material"]["alpha"];
+		beta		 = config["sim"]["material"]["beta"];
 
 		// load mesh
 		{
@@ -153,8 +155,8 @@ Vec Solver::StartUp(const json& config)
 
 		Vec3d v = mesh->getVertex(i);
 		x(3 * i + 0) = v[0];
-		x(3 * i + 1) = 0.0;
-		x(3 * i + 2) = v[2];
+		x(3 * i + 1) = v[1];
+		x(3 * i + 2) = 0.0;
 
 		/*
 		x(3 * i + 0) = 0.0;
@@ -294,8 +296,6 @@ Vec Solver::Step()
 				// backward euler
 				// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
 				double h2 = h * h;
-				double alpha = 0.01;
-				double beta = 5.0;
 
 				// h* f + h ^ 2 * K * v
 				Vec RHS = h * ((fInt + fExt) + h * Keff * v);
@@ -315,7 +315,7 @@ Vec Solver::Step()
 			}
 			else if (integrator[0] == '1')
 			{
-				double factor = 0.000'001;
+				double factor = 0.0001;
 				SpMat EffectiveMatrix = Keff;
 				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 				Vec SystemVec = S * (-fInt + fExt);

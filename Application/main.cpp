@@ -30,18 +30,18 @@ int main(int, char**)
     json configA, configB;
     configA["sim"] = 
     {
-        { "integrator", "1" },
-        { "stepSize",   0.01 },
+        { "integrator", "0" },
+        { "stepSize",   0.000'05 },
         { "numSubsteps",   1 },
         { "model",      "turtle" },
         { "material", 
             {
-                {"energyFunction", "SNH"},
+                {"energyFunction", "ARAP"},
                 {"E", 1.0e6},
                 {"nu", 0.45},
-                {"rho", 1000.0},
-                {"alpha", 0.2},
-                {"beta", 2.0},
+                {"rho", 500.0},
+                {"alpha", 0.1},
+                {"beta", 5.0},
             }
         },
         { "loadCases",
@@ -54,19 +54,19 @@ int main(int, char**)
                             {"f", 0.0}
                         },
                         {
-                            {"t", 0.3},
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.3},
                             {"f", 500'000.0}
                         },
                         {
-                            {"t", 0.4},
+                            {"t", 1002.5},
                             {"f", 0.0}
                         },
                         {
-                            {"t", 2.5},
-                            {"f", 0.0}
-                        },
-                        {
-                            {"t", 100.0},
+                            {"t", 100000.0},
                             {"f", 0.0}
                         },
                     }
@@ -85,8 +85,8 @@ int main(int, char**)
 
     configB["sim"] =
     {
-        { "integrator", "1" },
-        { "stepSize",   0.01 },
+        { "integrator", "0" },
+        { "stepSize",   0.000'1 },
         { "numSubsteps",   1 },
         { "model",      "asianDragon" },
         { "material",
@@ -135,7 +135,7 @@ int main(int, char**)
         }
     };
 
-    config = configB;
+    config = configA;
 
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();

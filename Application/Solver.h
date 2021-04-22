@@ -70,7 +70,7 @@ class Solver
 
 	VolumetricMesh* mesh;
 	uint32_t numDOFs, numElements, numVertices;
-	double rho;
+	double rho, alpha, beta;
 
 	std::vector<int> loadedVerts, BCs;
 	double loadVal;
