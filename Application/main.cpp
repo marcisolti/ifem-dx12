@@ -29,14 +29,16 @@ int main(int, char**)
     json config;
     config["sim"] = 
     {
-        { "integrator", "0" },
-        { "stepSize",   0.01 },
+        { "integrator", "1" },
+        { "stepSize",   0.01},
+        { "numSubsteps",   5},
         { "model",      "turtle" },
         { "material", 
             {
                 {"energyFunction", "ARAP"},
                 {"E", 1.0e6},
-                {"nu", 0.45}
+                {"nu", 0.45},
+                {"rho", 1000.0}
             }
         },
         { "loadCases",

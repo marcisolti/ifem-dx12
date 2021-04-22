@@ -9,6 +9,7 @@ Vec Solver::StartUp(const json& config)
 	{
 		integrator	= config["sim"]["integrator"];
 		h			= config["sim"]["stepSize"];
+		numSubsteps = config["sim"]["numSubsteps"];
 		interpolator = new Interpolator{ config };
 
 		// load mesh
@@ -36,6 +37,7 @@ Vec Solver::StartUp(const json& config)
 		{
 			double E  = config["sim"]["material"]["E"];
 			double nu = config["sim"]["material"]["nu"];
+			rho		  = config["sim"]["material"]["rho"];
 			energyFunction = new ARAP{ E, nu };
 		}
 
@@ -56,7 +58,6 @@ Vec Solver::StartUp(const json& config)
 	fExt = Vec::Zero(numDOFs);
 
 	//energyFunction = new ARAP{ 1'000'000, 0.35 };
-	rho = 1000;
 
 	// BCs, loaded verts, S, spI
 	{
@@ -308,6 +309,17 @@ Vec Solver::Step()
 				u = h * v;
 				x.noalias() += u;
 			}
+			else if (integrator[0] == '1')
+			{
+				double factor = 0.000'1;
+				SpMat EffectiveMatrix = Keff;
+				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+				Vec SystemVec = S * (-fInt + fExt);
+				//Vec SystemVec = S * ( -fInt - M*( u_0 * 0.000'001 ) );
+				solver.compute(SystemMatrix);
+				Vec u = solver.solve(SystemVec);
+				x.noalias() += h * factor * u;
+			}
 
 			// quasistatic
 			/*
@@ -452,10 +464,9 @@ Vec Solver::Step()
 		if(substep > 4)
 			break;
 		*/
-		//if(substep++ > 4)
+		if(substep++ > numSubsteps)
 			break;
 	}
-	stepNum++;
 
 	return x;
 }

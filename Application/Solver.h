@@ -64,7 +64,7 @@ class Solver
 	std::string integrator;
 	EnergyFunction* energyFunction;
 	double T = 0.01, h;
-	int stepNum = 0.0;
+	int numSubsteps;
 
 	Interpolator* interpolator;
 
