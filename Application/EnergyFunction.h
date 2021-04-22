@@ -289,7 +289,6 @@ public:
 	}
 };
 
-
 inline Vec9 Flatten(const Mat3& mat)
 {
 	Vec9 vec;

@@ -145,18 +145,18 @@ Vec Solver::StartUp(const json& config)
 		x(3 * i + 0) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
 		x(3 * i + 1) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5)+2.0;
 		x(3 * i + 2) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
-		*/
 		Vec3d v = mesh->getVertex(i);
 		x(3 * i + 0) = v[0];
 		x(3 * i + 1) = v[1];
 		x(3 * i + 2) = v[2];
+		*/
 
-		/*
 		Vec3d v = mesh->getVertex(i);
 		x(3 * i + 0) = v[0];
 		x(3 * i + 1) = 0.0;
 		x(3 * i + 2) = v[2];
 
+		/*
 		x(3 * i + 0) = 0.0;
 		x(3 * i + 1) = 0.0;
 		x(3 * i + 2) = 0.0;
@@ -315,7 +315,7 @@ Vec Solver::Step()
 			}
 			else if (integrator[0] == '1')
 			{
-				double factor = 1.0;
+				double factor = 0.000'001;
 				SpMat EffectiveMatrix = Keff;
 				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 				Vec SystemVec = S * (-fInt + fExt);
