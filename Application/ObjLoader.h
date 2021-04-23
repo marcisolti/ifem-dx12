@@ -50,7 +50,7 @@ public:
 
 
 		std::vector<PNT_Vertex> vertices;
-		std::vector<int>		indices;
+		std::vector<uint32_t>		indices;
 
 		for (const auto& vx : mesh.vertices) {
 			PNT_Vertex data;
@@ -84,6 +84,7 @@ public:
 		);
 
 		geometry->vertices = vertices;
+		geometry->indices =	 indices;
 		return geometry;
 	}
 

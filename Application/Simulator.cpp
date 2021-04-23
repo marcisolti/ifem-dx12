@@ -40,6 +40,39 @@ void Simulator::SetDisplayIndex(int index)
 		surfaceGeo->vertices[i].position.z = posArray[index](3 * i + 2);
 	}
 
+
+	// normal computation 
+	std::vector<Float3> normals{ surfaceGeo->vertices.size(), { 0,0,0 } };
+	for (uint32_t i = 0; i < surfaceGeo->indices.size() / 3; i += 3)
+	{
+
+		uint32_t index0 = surfaceGeo->indices[3 * i + 0];
+		uint32_t index1 = surfaceGeo->indices[3 * i + 1];
+		uint32_t index2 = surfaceGeo->indices[3 * i + 2];
+
+		Float3 a = surfaceGeo->vertices[index0].position;
+		Float3 b = surfaceGeo->vertices[index1].position;
+		Float3 c = surfaceGeo->vertices[index2].position;
+
+		Float3 ba = b - a;
+		Float3 ca = c - a;
+
+		Float3 cross = ba.Cross(ca);
+		cross *= 0.5 / cross.Length();
+
+		normals[index0] += cross;
+		normals[index1] += cross;
+		normals[index2] += cross;
+
+	}
+
+	// set normal data
+	for (uint32_t i = 0; i < surfaceGeo->vertices.size(); ++i)
+	{
+		surfaceGeo->vertices[i].normal = normals[i];
+	}
+
+
 	surfaceGeo->SetData(
 		reinterpret_cast<const void*>(&(surfaceGeo->vertices[0])),
 		surfaceGeo->vertices.size() * sizeof(PNT_Vertex)

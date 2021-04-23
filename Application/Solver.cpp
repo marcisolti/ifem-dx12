@@ -37,10 +37,11 @@ Vec Solver::StartUp(const json& config)
 
 		// set material
 		{
-			double E  = config["sim"]["material"]["E"];
-			double nu = config["sim"]["material"]["nu"];
-			rho		  = config["sim"]["material"]["rho"];
+			double E					 = config["sim"]["material"]["E"];
+			double nu					 = config["sim"]["material"]["nu"];
+			rho							 = config["sim"]["material"]["rho"];
 			const std::string energyName = config["sim"]["material"]["energyFunction"];
+			
 			if (energyName == "ARAP")
 				energyFunction = new ARAP{ E, nu };
 			else if (energyName == "SNH")
@@ -291,7 +292,7 @@ Vec Solver::Step()
 		PerformanceCounter solution;
 		//solve
 		{
-			if (integrator[0] == '0')
+			if (integrator == "bwEuler")
 			{
 				// backward euler
 				// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
@@ -313,7 +314,7 @@ Vec Solver::Step()
 				u = h * v;
 				x.noalias() += u;
 			}
-			else if (integrator[0] == '1')
+			else if (integrator == "qStatic")
 			{
 				double factor = 0.0001;
 				SpMat EffectiveMatrix = Keff;

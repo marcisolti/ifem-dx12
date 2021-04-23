@@ -30,8 +30,8 @@ int main(int, char**)
     json configA, configB;
     configA["sim"] = 
     {
-        { "integrator", "0" },
-        { "stepSize",   0.000'05 },
+        { "integrator", "qStatic" },
+        { "stepSize",   0.000'5 },
         { "numSubsteps",   1 },
         { "model",      "turtle" },
         { "material", 
@@ -85,7 +85,7 @@ int main(int, char**)
 
     configB["sim"] =
     {
-        { "integrator", "0" },
+        { "integrator", "bwEuler" },
         { "stepSize",   0.000'1 },
         { "numSubsteps",   1 },
         { "model",      "asianDragon" },

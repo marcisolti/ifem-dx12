@@ -37,6 +37,7 @@ namespace GG {
 	public:
 
 		std::vector<PNT_Vertex> vertices;
+		std::vector<uint32_t> indices;
 
 		Geometry(ID3D12Device* device, std::string filePath)
 		{
@@ -48,7 +49,6 @@ namespace GG {
 			void* indexData;
 			void* data;
 			DXGI_FORMAT indexFormat;
-			std::vector<uint32_t> indices;
 			{
 				std::string path = "../Media/" + filePath;
 
