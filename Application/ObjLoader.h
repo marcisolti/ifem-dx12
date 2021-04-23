@@ -73,7 +73,7 @@ public:
 			}
 		}
 
-		GG::Geometry* geometry = new GG::Geometry(
+		GG::Geometry* geometry = new GG::Geometry{
 			device,
 			&(vertices.at(0)),
 			(unsigned int)(vertices.size() * sizeof(PNT_Vertex)),
@@ -81,7 +81,7 @@ public:
 			&(indices.at(0)),
 			(unsigned int)(indices.size() * sizeof(unsigned int)),
 			DXGI_FORMAT_R32_UINT
-		);
+		};
 
 		geometry->vertices = vertices;
 		geometry->indices =	 indices;

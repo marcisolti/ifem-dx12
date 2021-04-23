@@ -7,12 +7,13 @@ Vec Solver::StartUp(const json& config)
 {
 	// read config
 	{
-		integrator	= config["sim"]["integrator"];
-		h			= config["sim"]["stepSize"];
-		numSubsteps = config["sim"]["numSubsteps"];
+		integrator	 = config["sim"]["integrator"];
+		h			 = config["sim"]["stepSize"];
+		numSubsteps  = config["sim"]["numSubsteps"];
 		interpolator = new Interpolator{ config };
 		alpha		 = config["sim"]["material"]["alpha"];
 		beta		 = config["sim"]["material"]["beta"];
+		factor		 = config["sim"]["magicConstant"];
 
 		// load mesh
 		{
@@ -142,28 +143,46 @@ Vec Solver::StartUp(const json& config)
 	}
 
 	std::srand(std::time(nullptr)); // use current time as seed for random generator
+
+	std::string initConfig = config["sim"]["initConfig"];
 	for (size_t i = 0; i < mesh->getNumVertices(); ++i)
 	{
-		/*
-		x(3 * i + 0) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
-		x(3 * i + 1) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5)+2.0;
-		x(3 * i + 2) = 10.0 * ((double)std::rand() / RAND_MAX - 0.5);
 		Vec3d v = mesh->getVertex(i);
 		x(3 * i + 0) = v[0];
 		x(3 * i + 1) = v[1];
 		x(3 * i + 2) = v[2];
-		*/
+	}
 
-		Vec3d v = mesh->getVertex(i);
-		x(3 * i + 0) = v[0];
-		x(3 * i + 1) = v[1];
-		x(3 * i + 2) = 0.0;
+	if (initConfig.at(0) == 'p')
+	{
+		// NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+		for (size_t i = 0; i < mesh->getNumVertices(); ++i)
+		{
+			Vec3d v = mesh->getVertex(i);
+			switch (initConfig.at(1))
+			{
+			case 'x':
+				x(3 * i + 0) = 0.0;
+				break;
+			case 'y':
+				x(3 * i + 1) = 0.0;
+				break;
+			case 'z':
+				x(3 * i + 2) = 0.0;
+				break;
+			}
+		}
+	}
 
-		/*
-		x(3 * i + 0) = 0.0;
-		x(3 * i + 1) = 0.0;
-		x(3 * i + 2) = 0.0;
-		*/
+	if (initConfig.at(0) == 'o')
+	{
+		for (size_t i = 0; i < mesh->getNumVertices(); ++i)
+		{
+			Vec3d v = mesh->getVertex(i);
+			x(3 * i + 0) = 0.0;
+			x(3 * i + 1) = 0.0;
+			x(3 * i + 2) = 0.0;
+		}
 	}
 
 	return x;
@@ -177,19 +196,6 @@ void Solver::ShutDown()
 Vec Solver::Step()
 {
 	int substep = 0;
-
-	/*
-	double loadIncrement = 200.0;
-
-	if(loadVal <= 50'000)
-		loadVal += loadIncrement;
-		
-	if (stepNum > 200)
-		loadVal = 0.0;
-
-	for (auto index : loadedVerts)
-		fExt(index) = loadVal;
-	*/
 
 	T += h;
 
@@ -312,11 +318,10 @@ Vec Solver::Step()
 
 				v.noalias() += dv;
 				u = h * v;
-				x.noalias() += u;
+				x.noalias() += factor*u;
 			}
 			else if (integrator == "qStatic")
 			{
-				double factor = 0.0001;
 				SpMat EffectiveMatrix = Keff;
 				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 				Vec SystemVec = S * (-fInt + fExt);

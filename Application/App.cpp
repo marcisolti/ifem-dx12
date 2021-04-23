@@ -25,27 +25,39 @@ void App::Update(int* displayIndex, int frameCount)
 
         ImGui::SliderInt("Frame", displayIndex, 0, frameCount-1);
 
-        /*
         static bool playing = false;
         if (ImGui::Button("Play/Pause"))
             playing = !playing;
 
-        if (playing)
-            displayIndex++;
-        */
+        static int multiplier = 1;
+        ImGui::InputInt("timestep size", &multiplier);
 
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
 
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
+        if (playing && (*displayIndex + multiplier < frameCount - 1))
+            (*displayIndex) += multiplier;
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+
+        if (ImGui::TreeNode("Demo stuff"))
+        {
+
+            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+            ImGui::Checkbox("Another Window", &show_another_window);
+
+            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                counter++;
+            ImGui::SameLine();
+            ImGui::Text("counter = %d", counter);
+
+
+            ImGui::TreePop();
+            ImGui::Separator();
+        }
+
         ImGui::End();
     }
 
