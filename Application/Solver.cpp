@@ -37,7 +37,7 @@ Vec Solver::StartUp(const json& config)
 		}
 
 		// set material
-		{
+		{	
 			double E					 = config["sim"]["material"]["E"];
 			double nu					 = config["sim"]["material"]["nu"];
 			rho							 = config["sim"]["material"]["rho"];
@@ -62,8 +62,15 @@ Vec Solver::StartUp(const json& config)
 	numElements = mesh->getNumElements();
 
 	x = Vec::Zero(numDOFs);
+	x_0 = Vec::Zero(numDOFs);
+	u = Vec::Zero(numDOFs);
 	v = Vec::Zero(numDOFs);
+	a = Vec::Zero(numDOFs);
 	fExt = Vec::Zero(numDOFs);
+	z = Vec::Zero(numDOFs);
+	r = Vec::Zero(numDOFs);
+
+	z(3 * node + 2) = speed;
 
 	//energyFunction = new ARAP{ 1'000'000, 0.35 };
 
@@ -155,10 +162,8 @@ Vec Solver::StartUp(const json& config)
 
 	if (initConfig.at(0) == 'p')
 	{
-		// NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 		for (size_t i = 0; i < mesh->getNumVertices(); ++i)
 		{
-			Vec3d v = mesh->getVertex(i);
 			switch (initConfig.at(1))
 			{
 			case 'x':
@@ -185,6 +190,7 @@ Vec Solver::StartUp(const json& config)
 		}
 	}
 
+	x_0 = x;
 	return x;
 }
 
@@ -200,8 +206,12 @@ Vec Solver::Step()
 	T += h;
 
 	loadVal = interpolator->get(T);
+	double increment = loadVal - currentLoad;
+	currentLoad = loadVal;
 	for (auto index : loadedVerts)
-		fExt(index) = loadVal;
+	{
+		fExt(index)  = currentLoad;
+	}
 
 	std::cout << "T: " << T << "; fExt: " << loadVal << "; ";
 
@@ -217,9 +227,7 @@ Vec Solver::Step()
 	for (;;)
 	{
 		PerformanceCounter jacobian;
-		double dPdxTime = 0.0;
-		double AddToKeffTime = 0.0;
-		double FandPval = 0.0;
+		double dPdxTime = 0.0, AddToKeffTime = 0.0, FandPval = 0.0;
 		for (int i = 0; i < numElements; ++i)
 		{
 			PerformanceCounter FandP;
@@ -292,8 +300,8 @@ Vec Solver::Step()
 			}
 		}
 		jacobian.StopCounter();
-		std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << ", F and P: " << FandPval 
-			<< ", dPdx time: " << dPdxTime << " AddToKeffTime: " << AddToKeffTime << "; ";
+		//std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << ", F and P: " << FandPval 
+		//	<< ", dPdx time: " << dPdxTime << " AddToKeffTime: " << AddToKeffTime << "; ";
 
 		PerformanceCounter solution;
 		//solve
@@ -310,9 +318,11 @@ Vec Solver::Step()
 				//M - h * alpha * K - h ^ 2 * K
 				SpMat EffectiveMatrix = M - h * (alpha * Keff + beta * M) - h2 * Keff;
 
+				Vec SystemVec = S * RHS;
+
 				// project constaints
 				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-				Vec SystemVec = S * RHS;
+
 				solver.compute(SystemMatrix);
 				Vec dv = solver.solve(SystemVec);
 
@@ -323,12 +333,43 @@ Vec Solver::Step()
 			else if (integrator == "qStatic")
 			{
 				SpMat EffectiveMatrix = Keff;
+				Vec RHS = (-fInt + fExt);
+
 				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-				Vec SystemVec = S * (-fInt + fExt);
-				//Vec SystemVec = S * ( -fInt - M*( u_0 * 0.000'001 ) );
+				Vec SystemVec = S * RHS;
+
 				solver.compute(SystemMatrix);
 				Vec u = solver.solve(SystemVec);
+
 				x.noalias() += h * factor * u;
+			} 
+			else if (integrator == "Newmark")
+			{
+				// backward euler
+				// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
+				double h2Inv = 1.0 / (h * h);
+				double hInv =  1.0 /  h;
+
+				SpMat C = alpha * Keff + beta * M;
+				Vec RHS = fInt + fExt + M * (a + 4.0*hInv * v + 4.0*h2Inv * u) + C * (v + 2.0*hInv * u);
+
+				SpMat EffectiveMatrix = 4.0*h2Inv * M + 2.0*hInv * C + Keff;
+
+				// project constaints
+				Vec SystemVec = S * RHS;
+				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+
+				solver.compute(SystemMatrix);
+				Vec u_1 = solver.solve(SystemVec);
+
+				Vec v_1 = 2.0*hInv  * (u_1 - u) - v;
+				Vec a_1 = 4.0*h2Inv * (u_1 - u) - 4.0*hInv * v - a;
+
+				u = u_1;
+				v = v_1;
+				a = a_1;
+
+				x = x_0 + factor * u;
 			}
 
 			// quasistatic
@@ -404,77 +445,15 @@ Vec Solver::Step()
 
 		}
 		solution.StopCounter();
-		std::cout << "solved in " << solution.GetElapsedTime() << ' ';
-		std::cout << "||f||^2= " << fInt.squaredNorm() << '\n';
+		std::cout << "solved in " << solution.GetElapsedTime() << '\n';
 		/*
-		fInt = Vec::Zero(numDOFs);
-		for (int i = 0; i < numElements; ++i)
-		{
-			Vec3 v0, v1, v2, v3;
-			int indices[4];
-			{
-				indices[0] = 3 * mesh->getVertexIndex(i, 0);
-				indices[1] = 3 * mesh->getVertexIndex(i, 1);
-				indices[2] = 3 * mesh->getVertexIndex(i, 2);
-				indices[3] = 3 * mesh->getVertexIndex(i, 3);
-
-				v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
-				v1 << x(indices[1] + 0), x(indices[1] + 1), x(indices[1] + 2);
-				v2 << x(indices[2] + 0), x(indices[2] + 1), x(indices[2] + 2);
-				v3 << x(indices[3] + 0), x(indices[3] + 1), x(indices[3] + 2);
-			}
-
-			Mat3 F;
-			{
-				Vec3 ds1 = v1 - v0;
-				Vec3 ds2 = v2 - v0;
-				Vec3 ds3 = v3 - v0;
-
-				Mat3 Ds;
-				Ds <<
-					ds1[0], ds2[0], ds3[0],
-					ds1[1], ds2[1], ds3[1],
-					ds1[2], ds2[2], ds3[2];
-				Mat3 DmInv = DmInvs[i];
-				F = Ds * DmInv;
-			}
-
-			Mat3 P = energyFunction->GetPK1(F);
-			// calculate forces
-			{
-				Vec9 Pv = Flatten(P);
-				Mat9x12 dFdx = dFdxs[i];
-
-				Vec12 fEl;
-				fEl = dFdx.transpose() * Pv;
-
-				fEl *= -tetVols[i];
-				//fEl *= -1.0;
-
-				for (int el = 0; el < 4; ++el)
-				{
-					for (int incr = 0; incr < 3; ++incr)
-					{
-						fInt(indices[el] + incr) += fEl(3 * el + incr);
-					}
-				}
-			}
-		}
-		R = fInt - fExt;
-		
-		double rR = R.norm();
-		double rF = fExt.norm();
-		double val = rR / rF;
-
-		std::cout
-			<< "stepNum: " << stepNum << " substep:" << substep++
-			<< " rR / rF: " << val << ", t: " << T << ", f: " << loadVal << '\n';
-
-		//if (val > 0.9 && val < 1.1)
-		if(substep > 4)
-			break;
+		r = fInt - fExt;
+		double rNorm = r.squaredNorm();
+		double fNorm = fExt.squaredNorm();
+		double val = rNorm / fNorm;
+		std::cout << "f: " << fNorm << " r:" << rNorm << " r/f: " << val <<'\n';
 		*/
-		if(++substep > numSubsteps)
+		if(++substep > numSubsteps-1)
 			break;
 	}
 

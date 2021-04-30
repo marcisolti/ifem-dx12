@@ -30,7 +30,13 @@ int main(int, char**)
     json 
         configPancakeTurtle, configPancakeDragon, 
         configQStaticTurtleFail, configQStaticTurtleWin,
-        configBwEulerTurtleExplodes, configBwEulerTurtle;
+        configBwEulerTurtleExplodes, configBwEulerTurtleNotExplodes,
+        configBwEulerTurtleExplodes2, configQStaticTurtleWin2,
+        configBwEulerTurtleExplodes3, 
+        
+        configBwEulerTurtlePrettyOk, configBwEulerTurtleGetsJittery,
+        configNewmark0;
+
     configPancakeTurtle["sim"] = 
     {
         { "integrator", "qStatic" },
@@ -85,7 +91,7 @@ int main(int, char**)
                 256, 265
             }
         },
-        {"initConfig", "o"}
+        {"initConfig", "py"}
     };
 
     configPancakeDragon["sim"] =
@@ -199,6 +205,7 @@ int main(int, char**)
         {"initConfig", "r"}
     };
 
+    // works
     configQStaticTurtleWin["sim"] =
     {
         { "integrator", "qStatic" },
@@ -209,8 +216,8 @@ int main(int, char**)
         { "material",
             {
                 {"energyFunction", "ARAP"},
-                {"E", 1.0e6},
-                {"nu", 0.45},
+                {"E", 1'000'000.0},
+                {"nu", 0.35},
                 {"rho", 1000.0},
                 {"alpha", 0.2},
                 {"beta", 2.0},
@@ -226,11 +233,11 @@ int main(int, char**)
                             {"f", 0.0}
                         },
                         {
-                            {"t", 1.0},
+                            {"t", 0.2},
                             {"f", 25000.0}
                         },
                         {
-                            {"t", 1.05},
+                            {"t", 0.25},
                             {"f", 0.0}
                         },
                         {
@@ -313,7 +320,7 @@ int main(int, char**)
         {"initConfig", "r"}
     };
 
-    configBwEulerTurtle["sim"] =
+    configBwEulerTurtleNotExplodes["sim"] =
     {
         { "integrator",     "bwEuler" },
         { "stepSize",       0.001 },
@@ -370,7 +377,282 @@ int main(int, char**)
         {"initConfig", "r"}
     };
 
-    config = configBwEulerTurtle;
+    configBwEulerTurtleExplodes2["sim"] =
+    {
+        { "integrator", "bwEuler" },
+        { "stepSize",   0.01 },
+        { "magicConstant", 0.0001 },
+        { "numSubsteps",   1 },
+        { "model",      "turtle" },
+        { "material",
+            {
+                {"energyFunction", "ARAP"},
+                {"E", 1.0e6},
+                {"nu", 0.45},
+                {"rho", 1000.0},
+                {"alpha", 0.0},
+                {"beta", 0.0},
+            }
+        },
+        { "loadCases",
+            {
+                { "nodes", { 3 * 296 + 2 }},
+                { "loadSteps",
+                    {
+                        {
+                            {"t", 0.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 0.2},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 0.25},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                    }
+                },
+            },
+        },
+        { "BCs",
+            {
+                1, 3, 6, 8, 11, 12, 13, 15,
+                17, 18, 26, 29, 42, 45, 47,
+                49, 58, 59, 60, 247, 248,
+                256, 265
+            }
+        },
+        {"initConfig", "r"}
+    };
+
+    configQStaticTurtleWin2["sim"] =
+    {
+        { "integrator", "qStatic" },
+        { "stepSize",   0.01 },
+        { "magicConstant", 1.0 },
+        { "numSubsteps",   1 },
+        { "model",      "turtle" },
+        { "material",
+            {
+                {"energyFunction", "ARAP"},
+                {"E", 1.0e6},
+                {"nu", 0.45},
+                {"rho", 1000.0},
+                {"alpha", 0.2},
+                {"beta", 2.0},
+            }
+        },
+        { "loadCases",
+            {
+                { "nodes", { 3 * 296 + 2 }},
+                { "loadSteps",
+                    {
+                        {
+                            {"t", 0.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 1.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 1.05},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 2.5},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                    }
+                },
+            },
+        },
+        { "BCs",
+            {
+                1, 3, 6, 8, 11, 12, 13, 15,
+                17, 18, 26, 29, 42, 45, 47,
+                49, 58, 59, 60, 247, 248,
+                256, 265
+            }
+        },
+        {"initConfig", "r"}
+    };
+
+    // today
+    configBwEulerTurtlePrettyOk["sim"] =
+    {
+        { "integrator", "bwEuler" },
+        { "stepSize",   0.01 },
+        { "magicConstant", 1.0 },
+        { "numSubsteps",   1 },
+        { "model",      "turtle" },
+        { "material",
+            {
+                {"energyFunction", "ARAP"},
+                {"E", 0.2e6},
+                {"nu", 0.45},
+                {"rho", 1000.0},
+                {"alpha", 0.1},
+                {"beta", 1.0},
+            }
+        },
+        { "loadCases",
+            {
+                { "nodes", { 3 * 296 + 2 }},
+                { "loadSteps",
+                    {
+                        {
+                            {"t", 0.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 2.0},
+                            {"f", 5000.0}
+                        },
+                        {
+                            {"t", 2.5},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                    }
+                },
+            },
+        },
+        { "BCs",
+            {
+                1, 3, 6, 8, 11, 12, 13, 15,
+                17, 18, 26, 29, 42, 45, 47,
+                49, 58, 59, 60, 247, 248,
+                256, 265
+            }
+        },
+        {"initConfig", "r"}
+    };
+
+    // seems like jitteriness introduced by the sudden load decrease
+    configBwEulerTurtleGetsJittery["sim"] =
+    {
+        { "integrator", "bwEuler" },
+        { "stepSize",   0.01 },
+        { "magicConstant", 1.0 },
+        { "numSubsteps",   1 },
+        { "model",      "turtle" },
+        { "material",
+            {
+                {"energyFunction", "ARAP"},
+                {"E", 0.2e6},
+                {"nu", 0.45},
+                {"rho", 1000.0},
+                {"alpha", 0.1},
+                {"beta", 1.0},
+            }
+        },
+        { "loadCases",
+            {
+                { "nodes", { 3 * 296 + 2 }},
+                { "loadSteps",
+                    {
+                        {
+                            {"t", 0.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 1.0},
+                            {"f", 5000.0}
+                        },
+                        {
+                            {"t", 1.05},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 0.51},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                    }
+                },
+            },
+        },
+        { "BCs",
+            {
+                1, 3, 6, 8, 11, 12, 13, 15,
+                17, 18, 26, 29, 42, 45, 47,
+                49, 58, 59, 60, 247, 248,
+                256, 265
+            }
+        },
+        {"initConfig", "r"}
+    };
+
+    configNewmark0["sim"] =
+    {
+        { "integrator", "Newmark" },
+        { "stepSize",   0.01 },
+        { "magicConstant", 1.0 },
+        { "numSubsteps",   1 },
+        { "model",      "turtle" },
+        { "material",
+            {
+                {"energyFunction", "ARAP"},
+                {"E", 0.2e6},
+                {"nu", 0.45},
+                {"rho", 1000.0},
+                {"alpha", 0.1},
+                {"beta", 1.0},
+            }
+        },
+        { "loadCases",
+            {
+                { "nodes", { 3 * 296 + 2 }},
+                { "loadSteps",
+                    {
+                        {
+                            {"t", 0.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 2.0},
+                            {"f", 5000.0}
+                        },
+                        {
+                            {"t", 3.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                    }
+                },
+            },
+        },
+        { "BCs",
+            {
+                1, 3, 6, 8, 11, 12, 13, 15,
+                17, 18, 26, 29, 42, 45, 47,
+                49, 58, 59, 60, 247, 248,
+                256, 265
+            }
+        },
+        {"initConfig", "r"}
+    };
+
+    config = configNewmark0;
 
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();

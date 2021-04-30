@@ -4,6 +4,8 @@
 #include <Eigen/Sparse>
 #include <Eigen/IterativeLinearSolvers>
 
+#include <Eigen/PardisoSupport>
+
 #include "vega/volumetricMesh/volumetricMesh.h"
 #include "vega/volumetricMesh/volumetricMeshLoader.h"
 #include "vega/volumetricMesh/tetMesh.h"
@@ -36,8 +38,6 @@ public:
 			val.f = config["sim"]["loadCases"]["loadSteps"][i]["f"];
 			vals.push_back(val);
 		}
-		for (auto val : vals)
-			std::cout << val.t << ' ' << val.f << '\n';
 	}
 	double get(double T)
 	{
@@ -77,13 +77,18 @@ class Solver
 	SpMat S;
 	
 	SpMat Keff, M, spI;
-	Vec u, x, v, fExt;
+	Vec u, x, x_0, v, a, fExt, z, r;
+
+	int node = 296;
+	double speed = 0.1;
+	double currentLoad = 0.0;
 
 	std::vector<double> tetVols;
 	std::vector<Mat3> DmInvs;
 	std::vector<Mat9x12> dFdxs;
 
 	Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
+	//Eigen::PardisoLU<SpMat> solver;
 
 public:
 	

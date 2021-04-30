@@ -15,6 +15,9 @@ typedef Eigen::Matrix<double, 12, 1>  Vec12;
 
 inline Vec9 Flatten(const Mat3& mat);
 
+const double sqrt2Inv = 1.0 / std::sqrt(2.0);
+
+
 class EnergyFunction
 {
 protected:
@@ -64,7 +67,151 @@ public:
 		return P;
 	}
 
-	virtual Mat9 GetJacobian() override { return Mat9{}; };
+	virtual Mat9 GetJacobian() override 
+	{ 
+		//SVD, polar decomposition
+		using namespace Eigen;
+		Vec3 Sigma;
+		Mat3 U, V, SigMat, S;
+		{
+
+			JacobiSVD<Mat3> SVD(F, ComputeFullU | ComputeFullV);
+			Sigma = SVD.singularValues();
+			Mat3 U = SVD.matrixU();
+			Mat3 V = SVD.matrixV();
+
+			Mat3 L = Mat3::Identity();
+			L(2, 2) = (U * V.transpose()).determinant();
+		
+			if (U.determinant() < 0.0 && V.determinant() > 0.0)
+				U = U * L;
+
+			if (U.determinant() > 0.0 && V.determinant() < 0.0)
+				V = V * L;
+
+			Mat3 SigMat = Mat3::Zero();
+			for (int i = 0; i < 3; ++i)
+				SigMat(i, i) = Sigma(i);
+			
+			S = V * SigMat * V.transpose();
+		}
+
+		// invariants
+		double I1 = S.trace();
+		double I2 = (F * F.transpose()).trace();
+		double I3 = F.determinant();
+
+		double eigenVal[9];
+		// probing a 3x3 matrix to get lambda_{0,1,2}
+		{
+
+			Mat3 A;
+			for (int i = 0; i < 3; ++i) {
+				for (int j = 0; j < 3; ++j) {
+					A(i, j) = lambda * Sigma(i) * Sigma(j);
+				}
+			}
+			for (int i = 0; i < 3; ++i) {
+				A(i,i) = -mu + (lambda / 2) * (I2 - 3.0) + (lambda + 3.0 * mu) * Sigma(i) * Sigma(i);
+			}
+
+			Vector3cd lambdaMat = A.eigenvalues();
+			for (int i = 0; i < 3; ++i)
+				eigenVal[i] = lambdaMat(i).real();
+
+		}
+
+		// other eigenvals
+		{
+			eigenVal[3] = -mu + (lambda / 2) * (I2 - 3.0) + mu * ( Sigma(1)*Sigma(1) + Sigma(2)*Sigma(2) - Sigma(1)*Sigma(2) );
+			eigenVal[4] = -mu + (lambda / 2) * (I2 - 3.0) + mu * ( Sigma(0)*Sigma(0) + Sigma(2)*Sigma(2) - Sigma(0)*Sigma(2) );
+			eigenVal[5] = -mu + (lambda / 2) * (I2 - 3.0) + mu * ( Sigma(0)*Sigma(0) + Sigma(1)*Sigma(1) - Sigma(0)*Sigma(1) );
+			eigenVal[6] = -mu + (lambda / 2) * (I2 - 3.0) + mu * ( Sigma(1)*Sigma(1) + Sigma(2)*Sigma(2) + Sigma(1)*Sigma(2) );
+			eigenVal[7] = -mu + (lambda / 2) * (I2 - 3.0) + mu * ( Sigma(0)*Sigma(0) + Sigma(2)*Sigma(2) + Sigma(0)*Sigma(2) );
+			eigenVal[8] = -mu + (lambda / 2) * (I2 - 3.0) + mu * ( Sigma(0)*Sigma(0) + Sigma(1)*Sigma(1) + Sigma(0)*Sigma(1) );
+		}
+
+		// BC projection
+		for (int i = 0; i < 9; ++i) {
+			if (eigenVal[i] < 0.0) {
+				//eigenVal[i] = 0.0;
+			}
+		}
+
+		Vec9 Q[9];
+		// Q_{0,1,2}
+		{
+			Mat3 D[3];
+			for (int i = 0; i < 3; ++i) {
+				Mat3 S = Mat3::Zero();
+				S(i, i) = 1.0;
+				D[i] = U * S * V.transpose();
+			}
+
+
+			//scaling modes
+			Mat3 Q123[3];
+			for (int i = 0; i < 3; ++i) {
+				Q123[i].setZero();
+			}
+
+			for (int s = 0; s < 3; ++s)
+			{
+				double z[3];
+				z[0] = Sigma(0) * Sigma(2) + Sigma(1) * eigenVal[s];
+				z[1] = Sigma(1) * Sigma(2) + Sigma(0) * eigenVal[s];
+				z[2] = eigenVal[s] * eigenVal[s] - Sigma(2) * Sigma(2);
+
+				for (int i = 0; i < 3; ++i) {
+					Q123[s] += z[i] * D[i];
+				}
+			}
+
+			for (int i = 0; i < 3; ++i) {
+				Q[i] = Flatten(Q123[i]);
+			}
+		}
+
+		// Q_{3...8}
+		{
+			Mat3 T[6];
+			for (int i = 0; i < 6; ++i) {
+				T[i].setZero();
+			}
+
+			T[0](0, 1) = -1.0;
+			T[0](1, 0) = 1.0;
+
+			T[1](1, 2) = 1.0;
+			T[1](2, 1) = -1.0;
+
+			T[2](0, 2) = 1.0;
+			T[2](2, 0) = -1.0;
+
+			T[3](0, 1) = 1.0;
+			T[3](1, 0) = 1.0;
+
+			T[4](1, 2) = 1.0;
+			T[4](2, 1) = 1.0;
+
+			T[5](0, 2) = 1.0;
+			T[5](2, 0) = 1.0;
+
+
+			for (int i = 0; i < 6; ++i) {
+				Q[i + 3] = Flatten(sqrt2Inv * U * T[i] * V.transpose());
+			}
+
+
+		}
+
+		Mat9 H = Mat9::Zero();
+		for (int i = 0; i < 9; ++i) {
+			H += eigenVal[i] * Q[i] * Q[i].transpose();
+		}
+
+		return H;
+	};
 };
 
 class NeoHookean : public EnergyFunction
