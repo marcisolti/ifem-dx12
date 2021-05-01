@@ -21,7 +21,7 @@ float4 main(VSOutput input) : SV_Target
 {
 	float3 baseColorMap = baseTxt.Sample(sampl, -input.texCoord);
 	//float  shinyMap = shinyTxt.Sample(sampl, -input.texCoord).r;
-	float shinyMap = 0.8;
+	float shinyMap = 0.6;
 	
 	float3 N = normalize(input.normal);
 	float3 V = normalize(eyePos - input.worldPosition);
@@ -33,7 +33,7 @@ float4 main(VSOutput input) : SV_Target
 
 	float roughness = pow(1.0-shinyMap, 2);
 	float linearRoughness = roughness + 1e-5f;
-	float f0 = 0.4f;
+	float f0 = 0.3f;
 	float f90 = 1.f;
 
 	float NdotV = abs(dot(N, V)) + 1e-5f; // avoid artifact (?)

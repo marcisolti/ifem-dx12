@@ -69,11 +69,9 @@ struct Entity
 	GG::Geometry* geometry;
 	GG::Tex2D*	  texture;
 	Float4x4 transform;
-	uint32_t id;
 
 	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, const std::string& meshPath, const std::string& texturePath)
 	{
-		this->id = id;
 		geometry = new GG::Geometry(device, meshPath);
 		texture = new GG::Tex2D(device, heap, texturePath);
 		texture->CreateSrv(device, heap, id);
@@ -88,7 +86,6 @@ struct Entity
 
 	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, GG::Geometry* geo, const std::string& texturePath)
 	{
-		this->id = id;
 		geometry = geo;
 		texture = new GG::Tex2D(device, heap, texturePath);
 		texture->CreateSrv(device, heap, id);
@@ -146,9 +143,7 @@ class Renderer
 	GG::DescriptorHeap* appSrvHeap;
 
 	GG::GPSO* pso;
-	std::vector<Entity*> staticEntities;
-	Entity* deformableEntity = nullptr;
-	uint32_t objectCount;
+	std::map<uint32_t, Entity*> entityDirectory;
 
 	float dt;
 
@@ -164,9 +159,11 @@ public:
 	void ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void UploadTextures();
 
-	void AddEntity(const std::string& meshPath, const std::string& texPath);
-	void AddDeformable(const std::string& meshPath);
-	GG::Geometry* GetDeformableGeo() { return deformableEntity->geometry; }
+	void AddEntity(uint32_t id, const std::string& meshPath, const std::string& texPath);
+	void AddDeformable(uint32_t id, const std::string& meshPath);
+	GG::Geometry* GetDeformableGeo() { return entityDirectory[0]->geometry; }
+
+	void Transform(uint32_t id, const Float4x4& transform);
 
 private:
 

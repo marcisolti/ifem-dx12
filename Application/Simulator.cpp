@@ -8,7 +8,7 @@ void Simulator::StartUp(Renderer* renderer, const json& config)
 	stepNum = 0;
 	const std::string path{ "../Media/vega/" };
 	const std::string modelName = config["sim"]["model"];
-    renderer->AddDeformable(path + modelName + ".veg.obj");
+    renderer->AddDeformable(0, path + modelName + ".veg.obj");
     surfaceGeo = renderer->GetDeformableGeo();
 
 	Vec initPos = solver.StartUp(config);

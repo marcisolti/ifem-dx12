@@ -12,6 +12,12 @@ std::vector<double> results;
 #include "Common/nlohmann/json.hpp"
 using json = nlohmann::json;
 
+#include <fstream>
+#include <iomanip>
+#include <cstdlib>
+#include <iostream>
+#include <ctime>
+
 void Compute()
 {
     while(1)
@@ -27,6 +33,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int main(int, char**)
 {
     json config;
+    /*
     json 
         configPancakeTurtle, configPancakeDragon, 
         configQStaticTurtleFail, configQStaticTurtleWin,
@@ -35,7 +42,8 @@ int main(int, char**)
         configBwEulerTurtleExplodes3, 
         
         configBwEulerTurtlePrettyOk, configBwEulerTurtleGetsJittery,
-        configNewmark0;
+        configNewmark0,
+        configBwEulerTurtlePrettyOk2;
 
     configPancakeTurtle["sim"] = 
     {
@@ -515,11 +523,11 @@ int main(int, char**)
                             {"f", 0.0}
                         },
                         {
-                            {"t", 2.0},
+                            {"t", 1.5},
                             {"f", 5000.0}
                         },
                         {
-                            {"t", 2.5},
+                            {"t", 2.0},
                             {"f", 0.0}
                         },
                         {
@@ -652,8 +660,74 @@ int main(int, char**)
         {"initConfig", "r"}
     };
 
-    config = configNewmark0;
+    configBwEulerTurtlePrettyOk2["sim"] =
+    {
+        { "integrator", "bwEuler" },
+        { "stepSize",   0.005 },
+        { "magicConstant", 1.0 },
+        { "numSubsteps",   1 },
+        { "model",      "turtle" },
+        { "material",
+            {
+                {"energyFunction", "ARAP"},
+                {"E", 10.0e6},
+                {"nu", 0.1},
+                {"rho", 1000.0},
+                {"alpha", 0.1},
+                {"beta", 5.0},
+            }
+        },
+        { "loadCases",
+            {
+                { "nodes", { 3 * 296 + 2 }},
+                { "loadSteps",
+                    {
+                        {
+                            {"t", 0.0},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 0.1},
+                            {"f", 100'000.0}
+                        },
+                        {
+                            {"t", 0.2},
+                            {"f", 0.0}
+                        },
+                        {
+                            {"t", 100.0},
+                            {"f", 0.0}
+                        },
+                    }
+                },
+            },
+        },
+        { "BCs",
+            {
+                1, 3, 6, 8, 11, 12, 13, 15,
+                17, 18, 26, 29, 42, 45, 47,
+                49, 58, 59, 60, 247, 248,
+                256, 265
+            }
+        },
+        {"initConfig", "r"}
+    };
+    */
+    
+    const std::string configPath{ "../Media/configs/root.json" };
+    std::ifstream i(configPath);
+    i >> config;
 
+    std::cout << config << '\n';
+    
+    std::srand(std::time(nullptr)); // use current time as seed for random generator
+    int seed = std::rand();
+    config["hello"].push_back( seed );
+    // write prettified JSON to another file
+    std::ofstream o(configPath);
+    o << std::setw(4) << config << std::endl;
+    
+    
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, "ImGui Example", NULL };
@@ -663,9 +737,16 @@ int main(int, char**)
     renderer.StartUp(hwnd);
     app.StartUp();
 
-    //renderer.AddEntity("sphere.fbx", "checkered.png");
+    Float4x4 t = Float4x4::Translation({ 5,0,0 });
+    renderer.AddEntity(1, "sphere.fbx", "checkered.png");
+    renderer.Transform(1, t);
     //renderer.AddEntity("bunny.obj", "bunnybase.png");
     sim.StartUp(&renderer, config);
+    renderer.Transform(0, Float4x4::Rotation({ 0,1,0 }, 3.14156));
+    /*
+        stabilitas -> hullamterjedes
+    */
+
 
     renderer.UploadTextures();
 

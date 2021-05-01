@@ -219,15 +219,12 @@ Vec Solver::Step()
 	// clear Keff to 0.0
 	for (int k = 0; k < Keff.outerSize(); ++k)
 		for (Eigen::SparseMatrix<double>::InnerIterator it(Keff, k); it; ++it)
-		{
 			it.valueRef() = 0.0;
-		}
 
 	Vec fInt = Vec::Zero(numDOFs);
 	for (;;)
 	{
 		PerformanceCounter jacobian;
-		double dPdxTime = 0.0, AddToKeffTime = 0.0, FandPval = 0.0;
 		for (int i = 0; i < numElements; ++i)
 		{
 			PerformanceCounter FandP;
@@ -266,11 +263,8 @@ Vec Solver::Step()
 				Vec9 Pv = Flatten(P);
 				Mat9x12 dFdx = dFdxs[i];
 				
-				Vec12 fEl;
-				fEl = dFdx.transpose() * Pv;
-
+				Vec12 fEl = dFdx.transpose() * Pv;
 				fEl *= -tetVols[i];
-				//fEl *= -1.0;
 
 				for (int el = 0; el < 4; ++el)
 				{
@@ -280,27 +274,19 @@ Vec Solver::Step()
 					}
 				}
 			}
-			FandP.StopCounter();
-			FandPval += FandP.GetElapsedTime();
 			// get jacobian
 			{
-				PerformanceCounter dPdxCounter;
 				Mat9x12 dFdx = dFdxs[i];
 				Mat9 dPdF = energyFunction->GetJacobian();
+				
 				Mat12 dPdx = dFdx.transpose() * dPdF * dFdx;
-
 				dPdx *= -tetVols[i];
-				dPdxCounter.StopCounter();
-				dPdxTime += dPdxCounter.GetElapsedTime();
 
-				PerformanceCounter KeffCounter;
 				AddToKeff(Keff, dPdx, &indices[0]);
-				KeffCounter.StopCounter();
-				AddToKeffTime += KeffCounter.GetElapsedTime();
 			}
 		}
 		jacobian.StopCounter();
-		//std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << ", F and P: " << FandPval 
+		std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << "; ";
 		//	<< ", dPdx time: " << dPdxTime << " AddToKeffTime: " << AddToKeffTime << "; ";
 
 		PerformanceCounter solution;
@@ -335,6 +321,7 @@ Vec Solver::Step()
 				SpMat EffectiveMatrix = Keff;
 				Vec RHS = (-fInt + fExt);
 
+				// boundary condition projection
 				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 				Vec SystemVec = S * RHS;
 

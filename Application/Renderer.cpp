@@ -62,11 +62,8 @@ void Renderer::UploadTextures()
     DX_API("Failed to reset command list (UploadResources)")
         commandList->Reset(frameCtx->commandAllocator, nullptr);
 
-    for (const auto& ent : staticEntities)
+    for (const auto& [id, ent] : entityDirectory)
         ent->texture->UploadResources(commandList);
-
-    if(deformableEntity)
-        deformableEntity->texture->UploadResources(commandList);
 
     DX_API("Failed to close command list (UploadResources)")
         commandList->Close();
@@ -96,27 +93,19 @@ void Renderer::Draw()
         perFrameCb->eyePos.xyz = camera->GetEyePosition();
         perFrameCb->eyePos.w = 1.0f;
 
-        int i = 0;
-        perFrameCb->lights[0].color = { 1,1,1,1 };
-        perFrameCb->lights[0].position = { 10,10,15,1 };
-        i++;
-        perFrameCb->nrLights = i;
+        perFrameCb->lights[0].color = { 1,0,0,1 };
+        perFrameCb->lights[0].position = { 10,10,-15,1 };
 
+        perFrameCb->lights[1].color = { 0,0,1,1 };
+        perFrameCb->lights[1].position = { -10,10,15,1 };
+        perFrameCb->nrLights = 2;
+        
         perFrameCb.Upload();
         
-        //Float4x4 t = Float4x4::Identity;
-        //t *= Float4x4::Rotation({ 0,1,0 }, T / 2);
-        //deformableEntity->transform = t;
-        
-        for (const auto& ent : staticEntities)
+        for (const auto& [id, ent] : entityDirectory)
         {
-            perObjectCb->data[ent->id].modelTransform = ent->transform;
-            perObjectCb->data[ent->id].modelTransformInverse = ent->transform.Invert();
-        }
-        if(deformableEntity)
-        {
-            perObjectCb->data[deformableEntity->id].modelTransform = deformableEntity->transform;
-            perObjectCb->data[deformableEntity->id].modelTransformInverse = deformableEntity->transform.Invert();
+            perObjectCb->data[id].modelTransform = ent->transform;
+            perObjectCb->data[id].modelTransformInverse = ent->transform.Invert();
         }
 
         perObjectCb.Upload();
@@ -163,20 +152,14 @@ void Renderer::Draw()
             commandList->SetPipelineState(pso->Get());
 
             commandList->SetGraphicsRootConstantBufferView(0, perFrameCb.GetGPUVirtualAddress());
-            for (const auto& ent : staticEntities)
+            for (const auto& [id,ent] : entityDirectory)
             {
-                commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress(ent->id));
-                commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(ent->id));
+                commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress(id));
+                commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(id));
 
                 ent->geometry->Draw(commandList);
             }
-            if(deformableEntity)
-            {
-                commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress(deformableEntity->id));
-                commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(deformableEntity->id));
-
-                deformableEntity->geometry->Draw(commandList);
-            }
+           
         }
 
         appSrvHeap->BindHeap(commandList);
@@ -213,11 +196,8 @@ void Renderer::Draw()
 
 void Renderer::ShutDown(HWND hwnd)
 {
-    for (const auto& entity : staticEntities)
+    for (const auto& [id,entity] : entityDirectory)
         delete entity;
-
-    if (deformableEntity)
-        delete deformableEntity;
 
     WaitForLastSubmittedFrame();
 
@@ -231,21 +211,22 @@ void Renderer::ShutDown(HWND hwnd)
     //::UnregisterClass(wc.lpszClassName, wc.hInstance);
 }
 
-void Renderer::AddEntity(const std::string& meshPath, const std::string& texPath)
+void Renderer::AddEntity(uint32_t id, const std::string& meshPath, const std::string& texPath)
 {
-    Entity* e = new Entity{ objectCount, device, heap, meshPath, texPath };
-    staticEntities.push_back(e);
-    objectCount++;
+    Entity* e = new Entity{ id, device, heap, meshPath, texPath };
+    entityDirectory.insert({ id, e });
 }
 
-void Renderer::AddDeformable(const std::string& meshPath)
+void Renderer::Transform(uint32_t id, const Float4x4& transform)
 {
-    if (!deformableEntity)
-    {
-        GG::Geometry* geo = ObjLoader::parseFile(device, meshPath);
-        deformableEntity = new Entity{ objectCount, device, heap, geo, std::string{"bunnybase.png"} };
-        objectCount++;
-    }
+    entityDirectory[id]->transform = transform;
+}
+
+void Renderer::AddDeformable(uint32_t id, const std::string& meshPath)
+{
+    GG::Geometry* geo = ObjLoader::parseFile(device, meshPath);
+    Entity* e = new Entity{ id, device, heap, geo, std::string{"bunnybase.png"} };
+    entityDirectory.insert({ id, e });
 }
 
 bool Renderer::CreateDeviceD3D(HWND hWnd)
