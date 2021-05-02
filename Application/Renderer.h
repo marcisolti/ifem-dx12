@@ -27,6 +27,9 @@
 
 #include <thread>
 
+#include "Common/nlohmann/json.hpp"
+using json = nlohmann::json;
+
 constexpr uint32_t                          NUM_FRAMES_IN_FLIGHT = 3;
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -125,9 +128,9 @@ class Renderer
 	D3D12_RECT scissorRect;
 	// rtv
 	uint32_t								NUM_BACK_BUFFERS = 3;
-	GG::DescriptorHeap*						rtvHeap;
+	GG::DescriptorHeap* rtvHeap;
 	std::vector<com_ptr<ID3D12Resource>>	renderTargets;
-	GG::DescriptorHeap*						dsvHeap;
+	GG::DescriptorHeap* dsvHeap;
 	com_ptr<ID3D12Resource>					depthStencilBuffer;
 
 	// --- ----
@@ -143,16 +146,18 @@ class Renderer
 	GG::DescriptorHeap* appSrvHeap;
 
 	GG::GPSO* pso;
-	std::map<uint32_t, Entity*> entityDirectory;
 
 	float dt;
 
+	json* config;
+
 public:
+	std::map<uint32_t, Entity*> entityDirectory;
 
-	Renderer() = default;
-	~Renderer() = default;
+	Renderer();
+	~Renderer();
 
-	void StartUp(HWND hwnd);
+	void StartUp(HWND hwnd, json* config);
 	void ShutDown(HWND hwnd);
 
 	void Draw();

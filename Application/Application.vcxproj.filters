@@ -22,4 +22,14 @@
     <ClInclude Include="..\GG\GPSO.h" />
     <ClInclude Include="..\GG\Tex2D.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Filter Include="config">
+      <UniqueIdentifier>{6faecbd6-b343-4bcf-bdc4-4e9f030827e3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Media\configs\root.json">
+      <Filter>config</Filter>
+    </None>
+  </ItemGroup>
 </Project>

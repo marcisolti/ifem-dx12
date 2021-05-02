@@ -1,7 +1,12 @@
 #include "App.h"
 
-void App::StartUp()
+App::App() {}
+App::~App() {}
+
+void App::StartUp(Renderer* renderer, json* config)
 {
+    this->config = config;
+    entityDirectoryRef = &(renderer->entityDirectory);
 
 }
 
@@ -15,6 +20,7 @@ void App::Update(int* displayIndex, int frameCount)
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
+
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
     {
@@ -35,6 +41,59 @@ void App::Update(int* displayIndex, int frameCount)
 
         if (playing && (*displayIndex + multiplier < frameCount - 1))
             (*displayIndex) += multiplier;
+
+        for (const auto& [id, ent] : *entityDirectoryRef)
+        {
+            char buffer[128];
+            sprintf(buffer, "entity_%d", id);
+            if (ImGui::TreeNode(buffer))
+            {
+
+                ImGui::Text("id: %d", id);
+
+
+                ImGui::TreePop();
+            }
+        }
+
+        ImGui::Separator();
+
+        for (int i = 0; i < (*config)["lights"].size(); ++i)
+        {
+            char buffer[128];
+            sprintf(buffer, "light_%d", i);
+            if (ImGui::TreeNode(buffer))
+            {
+
+                ImVec4 lightColor = ImVec4{
+                    (*config)["lights"][i]["color"][0],
+                    (*config)["lights"][i]["color"][1],
+                    (*config)["lights"][i]["color"][2],
+                    1.0
+                };
+
+                ImVec4 lightPos = ImVec4{
+                    (*config)["lights"][i]["pos"][0],
+                    (*config)["lights"][i]["pos"][1],
+                    (*config)["lights"][i]["pos"][2],
+                    1.0
+                };
+                
+                ImGui::ColorEdit3("color", (float*)&lightColor); // Edit 3 floats representing a color
+                ImGui::DragFloat3("position", (float*)&lightPos);
+
+                (*config)["lights"][i]["pos"][0] = lightPos.x;
+                (*config)["lights"][i]["pos"][1] = lightPos.y;
+                (*config)["lights"][i]["pos"][2] = lightPos.z;
+
+                (*config)["lights"][i]["color"][0] = lightColor.x;
+                (*config)["lights"][i]["color"][1] = lightColor.y;
+                (*config)["lights"][i]["color"][2] = lightColor.z;
+
+                ImGui::TreePop();
+            }
+        }
+        
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 

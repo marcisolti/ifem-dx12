@@ -734,15 +734,37 @@ int main(int, char**)
     ::RegisterClassEx(&wc);
     HWND hwnd = ::CreateWindow(wc.lpszClassName, "Dear ImGui DirectX12 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
-    renderer.StartUp(hwnd);
-    app.StartUp();
+    renderer.StartUp(hwnd, &config);
+    app.StartUp(&renderer, &config);
 
-    Float4x4 t = Float4x4::Translation({ 5,0,0 });
-    renderer.AddEntity(1, "sphere.fbx", "checkered.png");
-    renderer.Transform(1, t);
+    for (int i = 0; i < config["scene"].size(); ++i)
+    {
+        const uint32_t id = i + 1;
+        renderer.AddEntity(
+            id, 
+            config["scene"][i]["mesh"], 
+            config["scene"][i]["texture"]
+        );
+        
+        renderer.Transform(
+            id, 
+            Float4x4::Translation({
+                config["scene"][i]["transform"][0],
+                config["scene"][i]["transform"][1],
+                config["scene"][i]["transform"][2] 
+            })
+        );
+
+    }
     //renderer.AddEntity("bunny.obj", "bunnybase.png");
     sim.StartUp(&renderer, config);
-    renderer.Transform(0, Float4x4::Rotation({ 0,1,0 }, 3.14156));
+    renderer.Transform(
+        0, 
+        Float4x4::Rotation(
+            { 0, 1, 0 }, 
+            3.14156
+        )
+    );
     /*
         stabilitas -> hullamterjedes
     */
