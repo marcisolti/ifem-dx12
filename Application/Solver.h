@@ -27,10 +27,14 @@ struct loadVal
 class Interpolator
 {
 	std::vector<loadVal> vals;
-	int step = 0;
+
 public:
-	Interpolator(json* config)
+	Interpolator() = default;
+	~Interpolator() = default;
+	
+	void set(json* config)
 	{
+		vals.clear();
 		for (int i = 0; i < (*config)["sim"]["loadCases"]["loadSteps"].size(); ++i)
 		{
 			loadVal val;
@@ -39,6 +43,7 @@ public:
 			vals.push_back(val);
 		}
 	}
+
 	double get(double T)
 	{
 		int i = 0;
@@ -59,41 +64,41 @@ public:
 	}
 };
 
+enum Integrator { qStatic, bwEuler, Newmark };
+
 class Solver
 {
 	json* config;
 
-	std::string integrator;
-	EnergyFunction* energyFunction;
-	double T = 0.01, h;
-	int numSubsteps;
-
-	Interpolator* interpolator;
-
 	VolumetricMesh* mesh;
 	uint32_t numDOFs, numElements, numVertices;
-	double rho, alpha, beta, factor;
+	
+	Integrator integrator;
+	EnergyFunction* energyFunction;
 
+	// time integration variables
+	double T, h, magicConstant;
+	int numSubsteps;
+	double alpha, beta;
+
+	// boundary conditions
 	std::vector<int> loadedVerts, BCs;
-	double loadVal;
 	SpMat S;
 	
+	// matrices and vectors
 	SpMat Keff, M, spI;
-	Vec u, x, x_0, v, a, fExt, z, r;
+	Vec x_0, u, x, v, a, z, fExt;
 
-	int node = 296;
-	double speed = 0.1;
-	double currentLoad = 0.0;
-
+	// precomputed stuff
 	std::vector<double> tetVols;
 	std::vector<Mat3> DmInvs;
 	std::vector<Mat9x12> dFdxs;
 
-	//Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
-	Eigen::PardisoLU<SpMat> solver;
+	// linear solver objects
+	Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
+	//Eigen::PardisoLU<SpMat> solver;
 
 public:
-	
 	Solver() = default;
 	~Solver() = default;
 
@@ -103,8 +108,7 @@ public:
 	Vec Step();
 
 private:
-
-	void AddToKeff(SpMat& Keff, const Mat12& dPdx, int* indices);
+	void AddToKeff(const Mat12& dPdx, int* indices);
 
 	Mat3	ComputeDm(int i);
 	Mat9x12 ComputedFdx(Mat3 DmInv);

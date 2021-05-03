@@ -14,7 +14,6 @@
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="Solver.h" />
     <ClInclude Include="EnergyFunction.h" />
-    <ClInclude Include="Integrator.h" />
     <ClInclude Include="PerformanceCounter.h" />
     <ClInclude Include="..\GG\ConstantBuffer.hpp" />
     <ClInclude Include="..\GG\DescriptorHeap.h" />
@@ -29,6 +28,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Media\configs\root.json">
+      <Filter>config</Filter>
+    </None>
+    <None Include="..\Media\configs\bwEuler-SNH.json">
       <Filter>config</Filter>
     </None>
   </ItemGroup>

@@ -71,7 +71,6 @@
     <ClInclude Include="..\GG\Tex2D.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="EnergyFunction.h" />
-    <ClInclude Include="Integrator.h" />
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="PerformanceCounter.h" />
     <ClInclude Include="Renderer.h" />
@@ -79,6 +78,7 @@
     <ClInclude Include="Solver.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Media\configs\bwEuler-SNH.json" />
     <None Include="..\Media\configs\root.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

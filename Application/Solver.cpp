@@ -3,18 +3,19 @@
 #include <cstdlib>
 #include <ctime>
 
+Interpolator interpolator;
+
 Vec Solver::StartUp(json* config)
 {
-	
 	// read config
 	{
-		integrator	 = (*config)["sim"]["integrator"];
-		h			 = (*config)["sim"]["stepSize"];
-		numSubsteps  = (*config)["sim"]["numSubsteps"];
-		interpolator = new Interpolator{ config };
-		alpha		 = (*config)["sim"]["material"]["alpha"];
-		beta		 = (*config)["sim"]["material"]["beta"];
-		factor		 = (*config)["sim"]["magicConstant"];
+		h			  = (*config)["sim"]["stepSize"];
+		numSubsteps   = (*config)["sim"]["numSubsteps"];
+		alpha		  = (*config)["sim"]["material"]["alpha"];
+		beta		  = (*config)["sim"]["material"]["beta"];
+		magicConstant = (*config)["sim"]["magicConstant"];
+
+		interpolator.set(config);
 
 		// load mesh
 		{
@@ -41,7 +42,6 @@ Vec Solver::StartUp(json* config)
 		{	
 			double E					 = (*config)["sim"]["material"]["E"];
 			double nu					 = (*config)["sim"]["material"]["nu"];
-			rho							 = (*config)["sim"]["material"]["rho"];
 			const std::string energyName = (*config)["sim"]["material"]["energyFunction"];
 			
 			if (energyName == "ARAP")
@@ -56,24 +56,28 @@ Vec Solver::StartUp(json* config)
 		for (int i = 0; i < (*config)["sim"]["loadCases"]["nodes"].size(); ++i)
 			loadedVerts.push_back((*config)["sim"]["loadCases"]["nodes"][i]);
 
+		std::string integratorString = (*config)["sim"]["integrator"];
+		if (integratorString == "qStatic")
+			integrator = qStatic;
+		else if (integratorString == "bwEuler")
+			integrator = bwEuler;
+		else if (integratorString == "Newmark")
+			integrator = Newmark;
 	}
 
 	numVertices = mesh->getNumVertices();
 	numDOFs = 3 * numVertices;
 	numElements = mesh->getNumElements();
 
+	T = 0.0;
+
 	x = Vec::Zero(numDOFs);
 	x_0 = Vec::Zero(numDOFs);
 	u = Vec::Zero(numDOFs);
 	v = Vec::Zero(numDOFs);
 	a = Vec::Zero(numDOFs);
-	fExt = Vec::Zero(numDOFs);
 	z = Vec::Zero(numDOFs);
-	r = Vec::Zero(numDOFs);
-
-	z(3 * node + 2) = speed;
-
-	//energyFunction = new ARAP{ 1'000'000, 0.35 };
+	fExt = Vec::Zero(numDOFs);
 
 	// BCs, loaded verts, S, spI
 	{
@@ -101,6 +105,7 @@ Vec Solver::StartUp(json* config)
 
 		M = SpMat(numDOFs, numDOFs);
 
+		double rho = (*config)["sim"]["material"]["rho"];
 		for (int i = 0; i < numElements; ++i)
 		{
 			Mat3 Dm = ComputeDm(i);
@@ -146,48 +151,51 @@ Vec Solver::StartUp(json* config)
 			Mat12 m;
 			m.setZero();
 
-			AddToKeff(Keff, m, &indices[0]);
+			AddToKeff(m, &indices[0]);
 		}
 	}
 
-	std::srand(std::time(nullptr)); // use current time as seed for random generator
-
-	std::string initConfig = (*config)["sim"]["initConfig"];
-	for (size_t i = 0; i < mesh->getNumVertices(); ++i)
+	// set init position
 	{
-		Vec3d v = mesh->getVertex(i);
-		x(3 * i + 0) = v[0];
-		x(3 * i + 1) = v[1];
-		x(3 * i + 2) = v[2];
-	}
+		std::srand(std::time(nullptr)); // use current time as seed for random generator
 
-	if (initConfig.at(0) == 'p')
-	{
-		for (size_t i = 0; i < mesh->getNumVertices(); ++i)
-		{
-			switch (initConfig.at(1))
-			{
-			case 'x':
-				x(3 * i + 0) = 0.0;
-				break;
-			case 'y':
-				x(3 * i + 1) = 0.0;
-				break;
-			case 'z':
-				x(3 * i + 2) = 0.0;
-				break;
-			}
-		}
-	}
-
-	if (initConfig.at(0) == 'o')
-	{
+		std::string initConfig = (*config)["sim"]["initConfig"];
 		for (size_t i = 0; i < mesh->getNumVertices(); ++i)
 		{
 			Vec3d v = mesh->getVertex(i);
-			x(3 * i + 0) = 0.0;
-			x(3 * i + 1) = 0.0;
-			x(3 * i + 2) = 0.0;
+			x(3 * i + 0) = v[0];
+			x(3 * i + 1) = v[1];
+			x(3 * i + 2) = v[2];
+		}
+
+		if (initConfig.at(0) == 'p')
+		{
+			for (size_t i = 0; i < mesh->getNumVertices(); ++i)
+			{
+				switch (initConfig.at(1))
+				{
+				case 'x':
+					x(3 * i + 0) = 0.0;
+					break;
+				case 'y':
+					x(3 * i + 1) = 0.0;
+					break;
+				case 'z':
+					x(3 * i + 2) = 0.0;
+					break;
+				}
+			}
+		}
+
+		if (initConfig.at(0) == 'o')
+		{
+			for (size_t i = 0; i < mesh->getNumVertices(); ++i)
+			{
+				Vec3d v = mesh->getVertex(i);
+				x(3 * i + 0) = 0.0;
+				x(3 * i + 1) = 0.0;
+				x(3 * i + 2) = 0.0;
+			}
 		}
 	}
 
@@ -203,20 +211,16 @@ void Solver::ShutDown()
 Vec Solver::Step()
 {
 	int substep = 0;
-
 	T += h;
 
-	loadVal = interpolator->get(T);
-	double increment = loadVal - currentLoad;
-	currentLoad = loadVal;
+	double loadValue = interpolator.get(T);
 	for (auto index : loadedVerts)
 	{
-		fExt(index)  = currentLoad;
+		fExt(index)  = loadValue;
 	}
 
-	std::cout << "T: " << T << "; fExt: " << loadVal << "; ";
+	std::cout << "T:" << T << ";\tfExt: " << loadValue << ";\t";
 
-	
 	// clear Keff to 0.0
 	for (int k = 0; k < Keff.outerSize(); ++k)
 		for (Eigen::SparseMatrix<double>::InnerIterator it(Keff, k); it; ++it)
@@ -225,6 +229,7 @@ Vec Solver::Step()
 	Vec fInt = Vec::Zero(numDOFs);
 	for (;;)
 	{
+		// build Keff
 		PerformanceCounter jacobian;
 		for (int i = 0; i < numElements; ++i)
 		{
@@ -277,160 +282,88 @@ Vec Solver::Step()
 			}
 			// get jacobian
 			{
-				Mat9x12 dFdx = dFdxs[i];
 				Mat9 dPdF = energyFunction->GetJacobian();
 				
+				Mat9x12 dFdx = dFdxs[i];
 				Mat12 dPdx = dFdx.transpose() * dPdF * dFdx;
 				dPdx *= -tetVols[i];
 
-				AddToKeff(Keff, dPdx, &indices[0]);
+				AddToKeff(dPdx, &indices[0]);
 			}
 		}
 		jacobian.StopCounter();
-		std::cout << "jacobian filled in " << jacobian.GetElapsedTime() << "; ";
-		//	<< ", dPdx time: " << dPdxTime << " AddToKeffTime: " << AddToKeffTime << "; ";
+		std::cout << "built Keff in " << jacobian.GetElapsedTime() << "; ";
 
 		PerformanceCounter solution;
-		//solve
+		switch (integrator)
 		{
-			if (integrator == "bwEuler")
-			{
-				// backward euler
-				// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
-				double h2 = h * h;
-
-				// h* f + h ^ 2 * K * v
-				Vec RHS = h * ((fInt + fExt) + h * Keff * v);
-
-				//M - h * alpha * K - h ^ 2 * K
-				SpMat EffectiveMatrix = M - h * (alpha * Keff + beta * M) - h2 * Keff;
-
-				Vec SystemVec = S * RHS;
-
-				// project constaints
-				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-
-				solver.compute(SystemMatrix);
-				Vec dv = solver.solve(SystemVec);
-
-				v.noalias() += dv;
-				u = h * v;
-				x.noalias() += factor*u;
-			}
-			else if (integrator == "qStatic")
-			{
-				SpMat EffectiveMatrix = Keff;
-				Vec RHS = (-fInt + fExt);
-
-				// boundary condition projection
-				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-				Vec SystemVec = S * RHS;
-
-				solver.compute(SystemMatrix);
-				Vec u = solver.solve(SystemVec);
-
-				x.noalias() += h * factor * u;
-			} 
-			else if (integrator == "Newmark")
-			{
-				// backward euler
-				// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
-				double h2Inv = 1.0 / (h * h);
-				double hInv =  1.0 /  h;
-
-				SpMat C = alpha * Keff + beta * M;
-				Vec RHS = fInt + fExt + M * (a + 4.0*hInv * v + 4.0*h2Inv * u) + C * (v + 2.0*hInv * u);
-
-				SpMat EffectiveMatrix = 4.0*h2Inv * M + 2.0*hInv * C + Keff;
-
-				// project constaints
-				Vec SystemVec = S * RHS;
-				SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-
-				solver.compute(SystemMatrix);
-				Vec u_1 = solver.solve(SystemVec);
-
-				Vec v_1 = 2.0*hInv  * (u_1 - u) - v;
-				Vec a_1 = 4.0*h2Inv * (u_1 - u) - 4.0*hInv * v - a;
-
-				u = u_1;
-				v = v_1;
-				a = a_1;
-
-				x = x_0 + factor * u;
-			}
-
-			// quasistatic
-			/*
-			SpMat SystemMatrix = S * Keff * S + spI - S;
-			Vec SystemVec = S * (-fInt + fExt);
-
-			// project constaints
-			solver.compute(SystemMatrix);
-			Vec dv = solver.solve(SystemVec);
-			x.noalias() += 0.01 * dv;
-			*/
-
-			// optimization
-			/*
-			h = 0.000'001;
+		case qStatic:
+		{
 			SpMat EffectiveMatrix = Keff;
-			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-			Vec SystemVec = S * (-fInt+fExt);
-			//Vec SystemVec = S * ( -fInt - M*( u_0 * 0.000'001 ) );
-			solver.compute(SystemMatrix);
-			Vec u = solver.solve(SystemVec);
-			u_0 = u;
-			x.noalias() += h * u;
-			*/
+			Vec RHS = (-fInt + fExt);
 
-			// optimization but with inertia
-			/*
-			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
-			h = 0.001;
-			double h2 = h * h;
-			double alpha = 0.02;
-			// h* f + h ^ 2 * K * v
-			Vec RHS = h * ((-fInt) + h * Keff * v);
-
-			//M - h * alpha * K - h ^ 2 * K
-			//SpMat EffectiveMatrix = M - h * (alpha * Keff + M) - h2 * Keff;
-			SpMat EffectiveMatrix = M - h * (alpha * Keff) - h2 * Keff;
-
-			// project constaints
+			// boundary condition projection
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 			Vec SystemVec = S * RHS;
+
+			solver.compute(SystemMatrix);
+			Vec u = solver.solve(SystemVec);
+
+			x.noalias() += h * magicConstant * u;
+		}
+		break;
+		case bwEuler:
+		{
+			// backward euler
+			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
+			double h2 = h * h;
+
+			// h* f + h ^ 2 * K * v
+			Vec RHS = h * ((fInt + fExt) + h * Keff * v);
+
+			//M - h * alpha * K - h ^ 2 * K
+			SpMat EffectiveMatrix = M - h * (alpha * Keff + beta * M) - h2 * Keff;
+
+			Vec SystemVec = S * RHS;
+
+			// project constaints
+			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
+
 			solver.compute(SystemMatrix);
 			Vec dv = solver.solve(SystemVec);
 
 			v.noalias() += dv;
 			u = h * v;
-			x.noalias() += u;
+			x.noalias() += magicConstant * u;
+		}
+		break;
+		case Newmark:
+		{
+			double h2Inv = 1.0 / (h * h);
+			double hInv = 1.0 / h;
 
-			//R += fInt;
-			
-			h = 0.001;
-			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
-			double h2 = h * h;
-			double alpha = 0.01;
+			SpMat C = alpha * Keff + beta * M;
+			Vec RHS = fInt + fExt + M * (a + 4.0 * hInv * v + 4.0 * h2Inv * u) + C * (v + 2.0 * hInv * u);
 
-			// h* f + h ^ 2 * K * v
-			Vec RHS = h * ((fInt) + h * Keff * v);
-
-			//M - h * alpha * K - h ^ 2 * K
-			SpMat EffectiveMatrix = M - h * (alpha * Keff + M) - h2 * Keff;
+			SpMat EffectiveMatrix = 4.0 * h2Inv * M + 2.0 * hInv * C + Keff;
 
 			// project constaints
-			//SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-			//Vec SystemVec = S * RHS;
-			solver.compute(EffectiveMatrix);
-			Vec dv = solver.solve(RHS);
+			Vec SystemVec = S * RHS;
+			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 
-			v.noalias() += dv;
-			u = h * v;
-			x.noalias() += u;
-			*/
+			solver.compute(SystemMatrix);
+			Vec u_1 = solver.solve(SystemVec);
 
+			Vec v_1 = 2.0 * hInv * (u_1 - u) - v;
+			Vec a_1 = 4.0 * h2Inv * (u_1 - u) - 4.0 * hInv * v - a;
+
+			u = u_1;
+			v = v_1;
+			a = a_1;
+
+			x = x_0 + magicConstant * u;
+		}
+		break;
 		}
 		solution.StopCounter();
 		std::cout << "solved in " << solution.GetElapsedTime() << '\n';
@@ -448,7 +381,7 @@ Vec Solver::Step()
 	return x;
 }
 
-void Solver::AddToKeff(SpMat& Keff, const Mat12 & dPdx, int* indices)
+void Solver::AddToKeff(const Mat12& dPdx, int* indices)
 {
 	for (int x = 0; x < 4; ++x)
 	{

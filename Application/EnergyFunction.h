@@ -3,15 +3,15 @@
 #include <Eigen/Dense>
 #include <algorithm>
 
-typedef Eigen::Matrix<double, 3, 3>  Mat3;
-typedef Eigen::Matrix<double, 9, 9>  Mat9;
-typedef Eigen::Matrix<double, 12, 12> Mat12;
-typedef Eigen::Matrix<double, 9, 12> Mat9x12;
-typedef Eigen::Matrix<double, 12, 9> Mat12x9;
+using Mat3		= Eigen::Matrix<double, 3, 3>;
+using Mat9		= Eigen::Matrix<double, 9, 9>;
+using Mat12		= Eigen::Matrix<double, 12, 12>;
+using Mat9x12	= Eigen::Matrix<double, 9, 12>;
+using Mat12x9	= Eigen::Matrix<double, 12, 9>;
 
-typedef Eigen::Matrix<double, 3, 1>  Vec3;
-typedef Eigen::Matrix<double, 9, 1>  Vec9;
-typedef Eigen::Matrix<double, 12, 1>  Vec12;
+using Vec3		= Eigen::Matrix<double, 3, 1>;
+using Vec9		= Eigen::Matrix<double, 9, 1>;
+using Vec12		= Eigen::Matrix<double, 12, 1>;
 
 inline Vec9 Flatten(const Mat3& mat);
 
