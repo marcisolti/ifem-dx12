@@ -87,7 +87,7 @@ class Solver
 	
 	// matrices and vectors
 	SpMat Keff, M, spI;
-	Vec x_0, u, x, v, a, z, fExt;
+	Vec x_0, u, x, v, a, z, fInt, fExt;
 
 	// precomputed stuff
 	std::vector<double> tetVols;

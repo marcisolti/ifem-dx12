@@ -63,6 +63,8 @@ Vec Solver::StartUp(json* config)
 			integrator = bwEuler;
 		else if (integratorString == "Newmark")
 			integrator = Newmark;
+		else
+			std::exit(420);
 	}
 
 	numVertices = mesh->getNumVertices();
@@ -71,13 +73,13 @@ Vec Solver::StartUp(json* config)
 
 	T = 0.0;
 
-	x = Vec::Zero(numDOFs);
-	x_0 = Vec::Zero(numDOFs);
-	u = Vec::Zero(numDOFs);
-	v = Vec::Zero(numDOFs);
-	a = Vec::Zero(numDOFs);
-	z = Vec::Zero(numDOFs);
-	fExt = Vec::Zero(numDOFs);
+	x.setZero(numDOFs);
+	x_0.setZero(numDOFs);
+	u.setZero(numDOFs);
+	v.setZero(numDOFs);
+	a.setZero(numDOFs);
+	z.setZero(numDOFs);
+	fExt.setZero(numDOFs);
 
 	// BCs, loaded verts, S, spI
 	{
@@ -226,7 +228,7 @@ Vec Solver::Step()
 		for (Eigen::SparseMatrix<double>::InnerIterator it(Keff, k); it; ++it)
 			it.valueRef() = 0.0;
 
-	Vec fInt = Vec::Zero(numDOFs);
+	fInt.setZero(numDOFs);
 	for (;;)
 	{
 		// build Keff
@@ -292,19 +294,16 @@ Vec Solver::Step()
 			}
 		}
 		jacobian.StopCounter();
-		std::cout << "built Keff in " << jacobian.GetElapsedTime() << "; ";
+		std::cout << "\tbuilt Keff in " << jacobian.GetElapsedTime() << ";\t";
 
 		PerformanceCounter solution;
 		switch (integrator)
 		{
 		case qStatic:
 		{
-			SpMat EffectiveMatrix = Keff;
-			Vec RHS = (-fInt + fExt);
-
 			// boundary condition projection
-			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
-			Vec SystemVec = S * RHS;
+			SpMat SystemMatrix = S * Keff * S + spI - S;
+			Vec SystemVec = S * (-fInt + fExt);
 
 			solver.compute(SystemMatrix);
 			Vec u = solver.solve(SystemVec);
@@ -374,7 +373,7 @@ Vec Solver::Step()
 		double val = rNorm / fNorm;
 		std::cout << "f: " << fNorm << " r:" << rNorm << " r/f: " << val <<'\n';
 		*/
-		if(++substep > numSubsteps-1)
+		if(++substep >= numSubsteps)
 			break;
 	}
 

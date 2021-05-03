@@ -723,9 +723,6 @@ int main(int, char**)
 
     std::cout << config << '\n';
     
-    std::srand(std::time(nullptr)); // use current time as seed for random generator
-    int seed = std::rand();
-    config["hello"].push_back( seed );
     // write prettified JSON to another file
     std::ofstream o(configPath);
     o << std::setw(4) << config << std::endl;

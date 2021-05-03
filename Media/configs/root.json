@@ -1,14 +1,4 @@
 {
-    "hello": [
-        12230,
-        12719,
-        14803,
-        14953,
-        15430,
-        18561,
-        22852,
-        28796
-    ],
     "lights": [
         {
             "color": [
@@ -82,7 +72,7 @@
             265
         ],
         "initConfig": "r",
-        "integrator": "bwEuler",
+        "integrator": "qStatic",
         "loadCases": {
             "loadSteps": [
                 {
@@ -90,7 +80,7 @@
                     "t": 0.0
                 },
                 {
-                    "f": 20000.0,
+                    "f": 0.0,
                     "t": 0.5
                 },
                 {
