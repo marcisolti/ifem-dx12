@@ -87,8 +87,8 @@ class Solver
 	std::vector<Mat3> DmInvs;
 	std::vector<Mat9x12> dFdxs;
 
-	Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
-	//Eigen::PardisoLU<SpMat> solver;
+	//Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
+	Eigen::PardisoLU<SpMat> solver;
 
 public:
 	
