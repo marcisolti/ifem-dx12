@@ -3,11 +3,12 @@
 #include "Solver.h"
 Solver solver;
 
-void Simulator::StartUp(Renderer* renderer, const json& config)
+void Simulator::StartUp(Renderer* renderer, json* config)
 {
+	this->config = config;
 	stepNum = 0;
 	const std::string path{ "../Media/vega/" };
-	const std::string modelName = config["sim"]["model"];
+	const std::string modelName = (*config)["sim"]["model"];
     renderer->AddDeformable(0, path + modelName + ".veg.obj");
     surfaceGeo = renderer->GetDeformableGeo();
 
@@ -17,7 +18,8 @@ void Simulator::StartUp(Renderer* renderer, const json& config)
 	
 	posArray.push_back(initPos);
 	stepNum++;
-
+	(*config)["app"]["stepNum"] = stepNum;
+	(*config)["app"]["displayIndex"] = 0;
 }
 
 void Simulator::ShutDown()
@@ -29,10 +31,12 @@ void Simulator::Step()
 	Vec currPos = solver.Step();
 	posArray.push_back(currPos);
 	stepNum++;
+	(*config)["app"]["stepNum"] = stepNum;
 }
 
-void Simulator::SetDisplayIndex(int index)
+void Simulator::Update()
 {
+	int index = (*config)["app"]["displayIndex"];
 	for (size_t i = 0; i < numDOFs / 3; ++i)
 	{
 		surfaceGeo->vertices[i].position.x = posArray[index](3 * i + 0);

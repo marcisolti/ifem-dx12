@@ -29,13 +29,13 @@ class Interpolator
 	std::vector<loadVal> vals;
 	int step = 0;
 public:
-	Interpolator(const json& config)
+	Interpolator(json* config)
 	{
-		for (int i = 0; i < config["sim"]["loadCases"]["loadSteps"].size(); ++i)
+		for (int i = 0; i < (*config)["sim"]["loadCases"]["loadSteps"].size(); ++i)
 		{
 			loadVal val;
-			val.t = config["sim"]["loadCases"]["loadSteps"][i]["t"];
-			val.f = config["sim"]["loadCases"]["loadSteps"][i]["f"];
+			val.t = (*config)["sim"]["loadCases"]["loadSteps"][i]["t"];
+			val.f = (*config)["sim"]["loadCases"]["loadSteps"][i]["f"];
 			vals.push_back(val);
 		}
 	}
@@ -61,6 +61,8 @@ public:
 
 class Solver
 {
+	json* config;
+
 	std::string integrator;
 	EnergyFunction* energyFunction;
 	double T = 0.01, h;
@@ -95,7 +97,7 @@ public:
 	Solver() = default;
 	~Solver() = default;
 
-	Vec StartUp(const json& config);
+	Vec StartUp(json* config);
 	void ShutDown();
 
 	Vec Step();

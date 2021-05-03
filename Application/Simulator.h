@@ -17,15 +17,16 @@ class Simulator
 	uint32_t numDOFs;
 	int stepNum;
 
+	json* config;
+
 public:
 	Simulator() = default;
 	~Simulator()= default;
 
-	void StartUp(Renderer* renderer, const json& config);
+	void StartUp(Renderer* renderer, json* config);
 	void ShutDown();
 
 	void Step();
-	void SetDisplayIndex(int index);
-	int GetStepNum() { return stepNum; }
+	void Update();
 };
 

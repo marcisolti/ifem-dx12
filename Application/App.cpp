@@ -10,15 +10,18 @@ void App::StartUp(Renderer* renderer, json* config)
 
 }
 
-void App::Update(int* displayIndex, int frameCount)
+void App::Update()
 {
     // Start the Dear ImGui frame
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
+    int stepNum = (*config)["app"]["stepNum"];
+    int displayIndex = (*config)["app"]["displayIndex"];
+
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    if (show_demo_window)
+    if (!show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 
 
@@ -29,7 +32,7 @@ void App::Update(int* displayIndex, int frameCount)
 
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-        ImGui::SliderInt("Frame", displayIndex, 0, frameCount-1);
+        ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
 
         static bool playing = false;
         if (ImGui::Button("Play/Pause"))
@@ -39,8 +42,8 @@ void App::Update(int* displayIndex, int frameCount)
         ImGui::InputInt("timestep size", &multiplier);
 
 
-        if (playing && (*displayIndex + multiplier < frameCount - 1))
-            (*displayIndex) += multiplier;
+        if (playing && (displayIndex + multiplier < stepNum - 1))
+            displayIndex += multiplier;
 
         for (const auto& [id, ent] : *entityDirectoryRef)
         {
@@ -127,6 +130,8 @@ void App::Update(int* displayIndex, int frameCount)
         ImGui::Text("Hello from another window!");
         ImGui::End();
     }
+
+    (*config)["app"]["displayIndex"] = displayIndex;
 
     // Rendering
     ImGui::Render();

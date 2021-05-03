@@ -20,6 +20,9 @@ using json = nlohmann::json;
 
 void Compute()
 {
+    /*
+    stabilitas -> hullamterjedes
+    */
     while(1)
     {
         sim.Step();
@@ -737,6 +740,7 @@ int main(int, char**)
     renderer.StartUp(hwnd, &config);
     app.StartUp(&renderer, &config);
 
+    // parse for scene
     for (int i = 0; i < config["scene"].size(); ++i)
     {
         const uint32_t id = i + 1;
@@ -756,8 +760,9 @@ int main(int, char**)
         );
 
     }
-    //renderer.AddEntity("bunny.obj", "bunnybase.png");
-    sim.StartUp(&renderer, config);
+
+    sim.StartUp(&renderer, &config);
+
     renderer.Transform(
         0, 
         Float4x4::Rotation(
@@ -765,20 +770,17 @@ int main(int, char**)
             3.14156
         )
     );
-    /*
-        stabilitas -> hullamterjedes
-    */
 
 
     renderer.UploadTextures();
 
-    std::thread t1{ Compute };
+    std::thread simThread{ Compute };
+
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
 
     // Our state
-    int displayIndex = 0;
     while (msg.message != WM_QUIT)
     {
         // Poll and handle messages (inputs, window resize, etc.)   
@@ -793,30 +795,8 @@ int main(int, char**)
             continue;
         }
 
-        //thread 1                  thread 2
-                            /*
-                            * draw static geometry
-                            * if(new) copy_geo
-                            * draw dynamic geometry
-                            */
-
-        // step simulator
-        /*
-            <-bcs
-            <-loads
-            ->displacements
-        */
-
-        // draw result
-        /*
-        * update vertices
-        * update normals
-        * new = true
-        */
-
-        int frameCount = sim.GetStepNum();
-        app.Update(&displayIndex, frameCount);
-        sim.SetDisplayIndex(displayIndex);
+        app.Update();
+        sim.Update();
         renderer.Draw();
 
     }

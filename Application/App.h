@@ -24,7 +24,7 @@ public:
 	~App();
 
 	void StartUp(Renderer* renderer, json* config);
-	void Update(int* displayIndex, int frameCount);
+	void Update();
 
 };
 

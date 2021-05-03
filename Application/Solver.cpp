@@ -3,21 +3,22 @@
 #include <cstdlib>
 #include <ctime>
 
-Vec Solver::StartUp(const json& config)
+Vec Solver::StartUp(json* config)
 {
+	
 	// read config
 	{
-		integrator	 = config["sim"]["integrator"];
-		h			 = config["sim"]["stepSize"];
-		numSubsteps  = config["sim"]["numSubsteps"];
+		integrator	 = (*config)["sim"]["integrator"];
+		h			 = (*config)["sim"]["stepSize"];
+		numSubsteps  = (*config)["sim"]["numSubsteps"];
 		interpolator = new Interpolator{ config };
-		alpha		 = config["sim"]["material"]["alpha"];
-		beta		 = config["sim"]["material"]["beta"];
-		factor		 = config["sim"]["magicConstant"];
+		alpha		 = (*config)["sim"]["material"]["alpha"];
+		beta		 = (*config)["sim"]["material"]["beta"];
+		factor		 = (*config)["sim"]["magicConstant"];
 
 		// load mesh
 		{
-			std::string meshPath = "../Media/vega/" + std::string{ config["sim"]["model"] } + ".veg";
+			std::string meshPath = "../Media/vega/" + std::string{ (*config)["sim"]["model"] } + ".veg";
 			std::cout << "loading mesh " << meshPath << '\n';
 
 			mesh = VolumetricMeshLoader::load(meshPath.c_str());
@@ -38,10 +39,10 @@ Vec Solver::StartUp(const json& config)
 
 		// set material
 		{	
-			double E					 = config["sim"]["material"]["E"];
-			double nu					 = config["sim"]["material"]["nu"];
-			rho							 = config["sim"]["material"]["rho"];
-			const std::string energyName = config["sim"]["material"]["energyFunction"];
+			double E					 = (*config)["sim"]["material"]["E"];
+			double nu					 = (*config)["sim"]["material"]["nu"];
+			rho							 = (*config)["sim"]["material"]["rho"];
+			const std::string energyName = (*config)["sim"]["material"]["energyFunction"];
 			
 			if (energyName == "ARAP")
 				energyFunction = new ARAP{ E, nu };
@@ -49,11 +50,11 @@ Vec Solver::StartUp(const json& config)
 				energyFunction = new StableNeoHookean{ E, nu };
 		}
 
-		for(int i = 0; i < config["sim"]["BCs"].size(); ++i)
-			BCs.push_back(config["sim"]["BCs"][i]);
+		for(int i = 0; i < (*config)["sim"]["BCs"].size(); ++i)
+			BCs.push_back((*config)["sim"]["BCs"][i]);
 
-		for (int i = 0; i < config["sim"]["loadCases"]["nodes"].size(); ++i)
-			loadedVerts.push_back(config["sim"]["loadCases"]["nodes"][i]);
+		for (int i = 0; i < (*config)["sim"]["loadCases"]["nodes"].size(); ++i)
+			loadedVerts.push_back((*config)["sim"]["loadCases"]["nodes"][i]);
 
 	}
 
@@ -151,7 +152,7 @@ Vec Solver::StartUp(const json& config)
 
 	std::srand(std::time(nullptr)); // use current time as seed for random generator
 
-	std::string initConfig = config["sim"]["initConfig"];
+	std::string initConfig = (*config)["sim"]["initConfig"];
 	for (size_t i = 0; i < mesh->getNumVertices(); ++i)
 	{
 		Vec3d v = mesh->getVertex(i);
