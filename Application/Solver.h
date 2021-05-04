@@ -1,5 +1,5 @@
 #pragma once
-
+#define NOMINMAX
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <Eigen/IterativeLinearSolvers>
@@ -16,7 +16,7 @@ using json = nlohmann::json;
 
 #include "PerformanceCounter.h"
 
-//#include <tbb/tbb.h>
+#include <tbb/tbb.h>
 
 using Vec   = Eigen::VectorXd;
 using SpMat = Eigen::SparseMatrix<double>;
@@ -120,10 +120,12 @@ public:
 	Vec Step();
 
 private:
+	void	ComputeElementJacobianAndHessian(int i);
+	void FillFint();
+	void FillKeff();
 	void AddToKeff(const Mat12& dPdx, int elem);
 
 	Mat3	ComputeDm(int i);
 	Mat9x12 ComputedFdx(Mat3 DmInv);
-	void	ComputeElementJacobianAndHessian(int i);
 };
 

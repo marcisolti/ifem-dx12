@@ -1,5 +1,5 @@
 #pragma once
-
+#define NOMINMAX
 #include "Renderer.h"
 
 #include <string>

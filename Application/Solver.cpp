@@ -242,7 +242,7 @@ Vec Solver::Step()
 		fExt(index)  = loadValue;
 	}
 
-	std::cout << "T:" << T << ";\tfExt: " << loadValue << ";\t";
+	std::cout << "T:" << T << "; fExt: " << loadValue << "; ";
 
 	// clear Keff to 0.0
 	for (int k = 0; k < Keff.outerSize(); ++k)
@@ -254,45 +254,33 @@ Vec Solver::Step()
 	{
 		// build Keff
 		PerformanceCounter jacobian;
-		for (int i = 0; i < numElements; i++)
-			ComputeElementJacobianAndHessian(i);
-		
+		//for (int i = 0; i < numElements; i++)
+		//	ComputeElementJacobianAndHessian(i);
+
+		tbb::parallel_for(
+			tbb::blocked_range<size_t>(0, numElements),
+			[=](const tbb::blocked_range<size_t>& r)
+			{
+				for (size_t i = r.begin(); i != r.end(); ++i)
+					ComputeElementJacobianAndHessian(i);
+			}
+		);
+
 		// accumulating Keff and fInt
 		{
-			// filling up fInt
-			for (int i = 0; i < numElements; ++i)
-			{
-				int* indices = &(indexArray[4*i]);
-				for (int el = 0; el < 4; ++el)
-				{
-					for (int incr = 0; incr < 3; ++incr)
-					{
-						fInt(indices[el] + incr) += fIntArray[i](3 * el + incr);
-					}
-				}
-			}
-			// filling up Keff
-			for (int i = 0; i < numElements; ++i)
-			{
-				int* indices = &(indexArray[4*i]);
-				for (int x = 0; x < 4; ++x)
-				{
-					for (int y = 0; y < 4; ++y)
-					{
-						for (int innerX = 0; innerX < 3; ++innerX)
-						{
-							for (int innerY = 0; innerY < 3; ++innerY)
-							{
-								Keff.coeffRef(indices[x] + innerX, indices[y] + innerY) += KelArray[i](3 * x + innerX, 3 * y + innerY);
-							}
-						}
-					}
-				}
-			}
+			/*
+			std::thread FintThread{ FillFint };
+			std::thread KeffThread{ FillKeff };
 
+			FintThread.join();
+			KeffThread.join();
+			*/
+
+			FillFint();
+			FillKeff();
 		}
 		jacobian.StopCounter();
-		std::cout << "\tbuilt Keff in " << jacobian.GetElapsedTime() << ";\t";
+		std::cout << " built Keff in " << jacobian.GetElapsedTime() << "; ";
 
 		PerformanceCounter solution;
 		switch (integrator)
@@ -464,6 +452,42 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 
 }
 
+void Solver::FillFint()
+{
+	for (int i = 0; i < numElements; ++i)
+	{
+		int* indices = &(indexArray[4 * i]);
+		for (int el = 0; el < 4; ++el)
+		{
+			for (int incr = 0; incr < 3; ++incr)
+			{
+				fInt(indices[el] + incr) += fIntArray[i](3 * el + incr);
+			}
+		}
+	}
+}
+
+void Solver::FillKeff()
+{
+	for (int i = 0; i < numElements; ++i)
+	{
+		int* indices = &(indexArray[4 * i]);
+		for (int x = 0; x < 4; ++x)
+		{
+			for (int y = 0; y < 4; ++y)
+			{
+				for (int innerX = 0; innerX < 3; ++innerX)
+				{
+					for (int innerY = 0; innerY < 3; ++innerY)
+					{
+						Keff.coeffRef(indices[x] + innerX, indices[y] + innerY) += KelArray[i](3 * x + innerX, 3 * y + innerY);
+					}
+				}
+			}
+		}
+	}
+}
+
 void Solver::AddToKeff(const Mat12& dPdx, int elem)
 {
 	int* indices = &(indexArray[4*elem]);
@@ -481,6 +505,8 @@ void Solver::AddToKeff(const Mat12& dPdx, int elem)
 		}
 	}
 }
+
+
 
 Mat3 Solver::ComputeDm(int i)
 {
