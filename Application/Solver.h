@@ -18,6 +18,8 @@ using json = nlohmann::json;
 
 #include <tbb/tbb.h>
 
+#include <future>
+
 using Vec   = Eigen::VectorXd;
 using SpMat = Eigen::SparseMatrix<double>;
 
@@ -119,11 +121,13 @@ public:
 
 	Vec Step();
 
+
 private:
 	void	ComputeElementJacobianAndHessian(int i);
+	void AddToKeff(const Mat12& dPdx, int elem);
+
 	void FillFint();
 	void FillKeff();
-	void AddToKeff(const Mat12& dPdx, int elem);
 
 	Mat3	ComputeDm(int i);
 	Mat9x12 ComputedFdx(Mat3 DmInv);

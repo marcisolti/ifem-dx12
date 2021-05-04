@@ -268,16 +268,16 @@ Vec Solver::Step()
 
 		// accumulating Keff and fInt
 		{
-			/*
-			std::thread FintThread{ FillFint };
-			std::thread KeffThread{ FillKeff };
-
+			std::thread KeffThread{ &Solver::FillKeff, this };
+			std::thread FintThread{ &Solver::FillFint, this };
+			
 			FintThread.join();
 			KeffThread.join();
-			*/
 
+			/*
 			FillFint();
 			FillKeff();
+			*/
 		}
 		jacobian.StopCounter();
 		std::cout << " built Keff in " << jacobian.GetElapsedTime() << "; ";
