@@ -10,6 +10,7 @@ Vec Solver::StartUp(json* config)
 	// read config
 	{
 		h			  = (*config)["sim"]["stepSize"];
+		h2 = h * h;
 		numSubsteps   = (*config)["sim"]["numSubsteps"];
 		alpha		  = (*config)["sim"]["material"]["alpha"];
 		beta		  = (*config)["sim"]["material"]["beta"];
@@ -64,8 +65,8 @@ Vec Solver::StartUp(json* config)
 
 				sq2inv = 1.0 / std::sqrt(2.0);
 			}
-			else if (energyName == "SNH")
-				energyFunction = new StableNeoHookean{ E, nu };
+			else
+				std::exit(420);
 		}
 
 		for(int i = 0; i < (*config)["sim"]["BCs"].size(); ++i)
@@ -74,12 +75,12 @@ Vec Solver::StartUp(json* config)
 		for (int i = 0; i < (*config)["sim"]["loadCases"]["nodes"].size(); ++i)
 			loadedVerts.push_back((*config)["sim"]["loadCases"]["nodes"][i]);
 
-		std::string integratorString = (*config)["sim"]["integrator"];
-		if (integratorString == "qStatic")
+		std::string integratorName = (*config)["sim"]["integrator"];
+		if (integratorName == "qStatic")
 			integrator = qStatic;
-		else if (integratorString == "bwEuler")
+		else if (integratorName == "bwEuler")
 			integrator = bwEuler;
-		else if (integratorString == "Newmark")
+		else if (integratorName == "Newmark")
 			integrator = Newmark;
 		else
 			std::exit(420);
@@ -301,7 +302,6 @@ Vec Solver::Step()
 		{
 			// backward euler
 			// [ M - h * alpha * K - h^2 * K ] * dv = h * f + h^2 * K * v
-			double h2 = h * h;
 
 			// h* f + h ^ 2 * K * v
 			Vec RHS = h * ((fInt + fExt) + h * Keff * v);
@@ -309,9 +309,8 @@ Vec Solver::Step()
 			//M - h * alpha * K - h ^ 2 * K
 			SpMat EffectiveMatrix = M - h * (alpha * Keff + beta * M) - h2 * Keff;
 
-			Vec SystemVec = S * RHS;
-
 			// project constaints
+			Vec SystemVec = S * RHS;
 			SpMat SystemMatrix = S * EffectiveMatrix * S + spI - S;
 
 			solver.compute(SystemMatrix);
@@ -352,13 +351,7 @@ Vec Solver::Step()
 		}
 		solution.StopCounter();
 		std::cout << "solved in " << solution.GetElapsedTime() << '\n';
-		/*
-		r = fInt - fExt;
-		double rNorm = r.squaredNorm();
-		double fNorm = fExt.squaredNorm();
-		double val = rNorm / fNorm;
-		std::cout << "f: " << fNorm << " r:" << rNorm << " r/f: " << val <<'\n';
-		*/
+
 		if(++substep >= numSubsteps)
 			break;
 	}
@@ -370,26 +363,25 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 {
 	const int* indices = &(indexArray[4 * i]);
 
-	Vec3 v0, v1, v2, v3;
-	{
-		v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
-		v1 << x(indices[1] + 0), x(indices[1] + 1), x(indices[1] + 2);
-		v2 << x(indices[2] + 0), x(indices[2] + 1), x(indices[2] + 2);
-		v3 << x(indices[3] + 0), x(indices[3] + 1), x(indices[3] + 2);
-	}
-
 	Mat3 F;
 	{
-		Vec3 ds1 = v1 - v0;
-		Vec3 ds2 = v2 - v0;
-		Vec3 ds3 = v3 - v0;
+		Vec3 v0, v1, v2, v3;
+		{
+			v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
+			v1 << x(indices[1] + 0), x(indices[1] + 1), x(indices[1] + 2);
+			v2 << x(indices[2] + 0), x(indices[2] + 1), x(indices[2] + 2);
+			v3 << x(indices[3] + 0), x(indices[3] + 1), x(indices[3] + 2);
+		}
+		const Vec3 ds1 = v1 - v0;
+		const Vec3 ds2 = v2 - v0;
+		const Vec3 ds3 = v3 - v0;
 
 		Mat3 Ds;
 		Ds <<
 			ds1[0], ds2[0], ds3[0],
 			ds1[1], ds2[1], ds3[1],
 			ds1[2], ds2[2], ds3[2];
-		Mat3 DmInv = DmInvs[i];
+		const Mat3 DmInv = DmInvs[i];
 		F = Ds * DmInv;
 	}
 
@@ -405,13 +397,14 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 		R = U * V.transpose();
 		P = mu * (F - R);
 	}
+
+	const double tetVol = tetVols[i];
 	// calculate forces
 	{
-		Vec9 Pv = Flatten(P);
-		Mat9x12 dFdx = dFdxs[i];
-
-		Vec12 fEl = dFdx.transpose() * Pv;
-		fEl *= -tetVols[i];
+		const Vec9 Pv = Flatten(P);
+		const Mat9x12 dFdx = dFdxs[i];
+		
+		const Vec12 fEl = -tetVol * dFdx.transpose() * Pv;
 
 		fIntArray[i] = fEl;
 	}
@@ -443,9 +436,8 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 			dPdF *= 2.0;
 		}
 
-		Mat9x12 dFdx = dFdxs[i];
-		Mat12 dPdx = dFdx.transpose() * dPdF * dFdx;
-		dPdx *= -tetVols[i];
+		const Mat9x12 dFdx = dFdxs[i];
+		const Mat12 dPdx = -tetVol * dFdx.transpose() * dPdF * dFdx;
 
 		KelArray[i] = dPdx;
 	}
@@ -472,13 +464,13 @@ void Solver::FillKeff()
 	for (int i = 0; i < numElements; ++i)
 	{
 		int* indices = &(indexArray[4 * i]);
-		for (int x = 0; x < 4; ++x)
+		for (int y = 0; y < 4; ++y)
 		{
-			for (int y = 0; y < 4; ++y)
+			for (int x = 0; x < 4; ++x)
 			{
-				for (int innerX = 0; innerX < 3; ++innerX)
+				for (int innerY = 0; innerY < 3; ++innerY)
 				{
-					for (int innerY = 0; innerY < 3; ++innerY)
+					for (int innerX = 0; innerX < 3; ++innerX)
 					{
 						Keff.coeffRef(indices[x] + innerX, indices[y] + innerY) += KelArray[i](3 * x + innerX, 3 * y + innerY);
 					}
@@ -491,9 +483,9 @@ void Solver::FillKeff()
 void Solver::AddToKeff(const Mat12& dPdx, int elem)
 {
 	int* indices = &(indexArray[4*elem]);
-	for (int x = 0; x < 4; ++x)
+	for (int y = 0; y < 4; ++y)
 	{
-		for (int y = 0; y < 4; ++y)
+		for (int x = 0; x < 4; ++x)
 		{
 			for (int innerX = 0; innerX < 3; ++innerX)
 			{
@@ -505,8 +497,6 @@ void Solver::AddToKeff(const Mat12& dPdx, int elem)
 		}
 	}
 }
-
-
 
 Mat3 Solver::ComputeDm(int i)
 {

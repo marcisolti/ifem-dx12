@@ -86,7 +86,7 @@ class Solver
 	double sq2inv;
 
 	// time integration variables
-	double T, h, magicConstant;
+	double T, h, h2, magicConstant;
 	int numSubsteps;
 	double alpha, beta;
 
