@@ -16,6 +16,8 @@ using json = nlohmann::json;
 
 #include "PerformanceCounter.h"
 
+//#include <tbb/tbb.h>
+
 using Vec   = Eigen::VectorXd;
 using SpMat = Eigen::SparseMatrix<double>;
 
@@ -76,6 +78,11 @@ class Solver
 	Integrator integrator;
 	EnergyFunction* energyFunction;
 
+	double lambda, mu;
+
+	Mat3 Twist[3];
+	double sq2inv;
+
 	// time integration variables
 	double T, h, magicConstant;
 	int numSubsteps;
@@ -94,6 +101,11 @@ class Solver
 	std::vector<Mat3> DmInvs;
 	std::vector<Mat9x12> dFdxs;
 
+	// for parallel Keff building
+	std::vector<int> indexArray;
+	std::vector<Vec12>	fIntArray;
+	std::vector<Mat12>	KelArray;
+
 	// linear solver objects
 	Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
 	//Eigen::PardisoLU<SpMat> solver;
@@ -108,10 +120,10 @@ public:
 	Vec Step();
 
 private:
-	void AddToKeff(const Mat12& dPdx, int* indices);
+	void AddToKeff(const Mat12& dPdx, int elem);
 
 	Mat3	ComputeDm(int i);
 	Mat9x12 ComputedFdx(Mat3 DmInv);
-
+	void	ComputeElementJacobianAndHessian(int i);
 };
 

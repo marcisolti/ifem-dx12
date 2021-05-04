@@ -45,7 +45,25 @@ Vec Solver::StartUp(json* config)
 			const std::string energyName = (*config)["sim"]["material"]["energyFunction"];
 			
 			if (energyName == "ARAP")
+			{
 				energyFunction = new ARAP{ E, nu };
+				lambda = nu * E / ((1.0 + nu) * (1.0 - 2.0 * nu)); // from vega fem homogeneousNeoHookeanIsotropicMaterial.cpp
+				mu = E / (2.0 * (1.0 + nu));
+
+				Twist[0].setZero();
+				Twist[0](0, 1) = -1.0;
+				Twist[0](1, 0) = 1.0;
+
+				Twist[1].setZero();
+				Twist[1](1, 2) = 1.0;
+				Twist[1](2, 1) = -1.0;
+
+				Twist[2].setZero();
+				Twist[2](0, 2) = 1.0;
+				Twist[2](2, 0) = -1.0;
+
+				sq2inv = 1.0 / std::sqrt(2.0);
+			}
 			else if (energyName == "SNH")
 				energyFunction = new StableNeoHookean{ E, nu };
 		}
@@ -136,25 +154,28 @@ Vec Solver::StartUp(json* config)
 		}
 	}
 
-	// create Keff
+	// create Keff, tbb arrays
 	{
 		Keff = SpMat(numDOFs, numDOFs);
+
 		for (int i = 0; i < numElements; ++i)
 		{
-			Vec3 v0, v1, v2, v3;
-			int indices[4];
 			{
-				indices[0] = 3 * mesh->getVertexIndex(i, 0);
-				indices[1] = 3 * mesh->getVertexIndex(i, 1);
-				indices[2] = 3 * mesh->getVertexIndex(i, 2);
-				indices[3] = 3 * mesh->getVertexIndex(i, 3);
+				indexArray.push_back(3 * mesh->getVertexIndex(i, 0));
+				indexArray.push_back(3 * mesh->getVertexIndex(i, 1));
+				indexArray.push_back(3 * mesh->getVertexIndex(i, 2));
+				indexArray.push_back(3 * mesh->getVertexIndex(i, 3));
 			}
 
 			Mat12 m;
 			m.setZero();
 
-			AddToKeff(m, &indices[0]);
+			AddToKeff(m, i);
 		}
+
+		fIntArray = std::vector<Vec12>{ numElements, Vec12::Zero() };
+		KelArray  = std::vector<Mat12>{ numElements, Mat12::Zero() };
+
 	}
 
 	// set init position
@@ -233,65 +254,42 @@ Vec Solver::Step()
 	{
 		// build Keff
 		PerformanceCounter jacobian;
-		for (int i = 0; i < numElements; ++i)
+		for (int i = 0; i < numElements; i++)
+			ComputeElementJacobianAndHessian(i);
+		
+		// accumulating Keff and fInt
 		{
-			PerformanceCounter FandP;
-			Vec3 v0, v1, v2, v3;
-			int indices[4];
+			// filling up fInt
+			for (int i = 0; i < numElements; ++i)
 			{
-				indices[0] = 3 * mesh->getVertexIndex(i, 0);
-				indices[1] = 3 * mesh->getVertexIndex(i, 1);
-				indices[2] = 3 * mesh->getVertexIndex(i, 2);
-				indices[3] = 3 * mesh->getVertexIndex(i, 3);
-
-				v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
-				v1 << x(indices[1] + 0), x(indices[1] + 1), x(indices[1] + 2);
-				v2 << x(indices[2] + 0), x(indices[2] + 1), x(indices[2] + 2);
-				v3 << x(indices[3] + 0), x(indices[3] + 1), x(indices[3] + 2);
-			}
-
-			Mat3 F;
-			{
-				Vec3 ds1 = v1 - v0;
-				Vec3 ds2 = v2 - v0;
-				Vec3 ds3 = v3 - v0;
-
-				Mat3 Ds;
-				Ds <<
-					ds1[0], ds2[0], ds3[0],
-					ds1[1], ds2[1], ds3[1],
-					ds1[2], ds2[2], ds3[2];
-				Mat3 DmInv = DmInvs[i];
-				F = Ds * DmInv;
-			}
-
-			Mat3 P = energyFunction->GetPK1(F);
-			// calculate forces
-			{
-				Vec9 Pv = Flatten(P);
-				Mat9x12 dFdx = dFdxs[i];
-				
-				Vec12 fEl = dFdx.transpose() * Pv;
-				fEl *= -tetVols[i];
-
+				int* indices = &(indexArray[4*i]);
 				for (int el = 0; el < 4; ++el)
 				{
 					for (int incr = 0; incr < 3; ++incr)
 					{
-						fInt(indices[el] + incr) += fEl(3 * el + incr);
+						fInt(indices[el] + incr) += fIntArray[i](3 * el + incr);
 					}
 				}
 			}
-			// get jacobian
+			// filling up Keff
+			for (int i = 0; i < numElements; ++i)
 			{
-				Mat9 dPdF = energyFunction->GetJacobian();
-				
-				Mat9x12 dFdx = dFdxs[i];
-				Mat12 dPdx = dFdx.transpose() * dPdF * dFdx;
-				dPdx *= -tetVols[i];
-
-				AddToKeff(dPdx, &indices[0]);
+				int* indices = &(indexArray[4*i]);
+				for (int x = 0; x < 4; ++x)
+				{
+					for (int y = 0; y < 4; ++y)
+					{
+						for (int innerX = 0; innerX < 3; ++innerX)
+						{
+							for (int innerY = 0; innerY < 3; ++innerY)
+							{
+								Keff.coeffRef(indices[x] + innerX, indices[y] + innerY) += KelArray[i](3 * x + innerX, 3 * y + innerY);
+							}
+						}
+					}
+				}
 			}
+
 		}
 		jacobian.StopCounter();
 		std::cout << "\tbuilt Keff in " << jacobian.GetElapsedTime() << ";\t";
@@ -380,8 +378,99 @@ Vec Solver::Step()
 	return x;
 }
 
-void Solver::AddToKeff(const Mat12& dPdx, int* indices)
+void Solver::ComputeElementJacobianAndHessian(int i)
 {
+	const int* indices = &(indexArray[4*i]);
+	std::cout << i << ": "
+		<< indices[0] << "; "
+		<< indices[1] << "; "
+		<< indices[2] << "; "
+		<< indices[3] << '\n';
+	
+	Vec3 v0, v1, v2, v3;
+	{
+		v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
+		v1 << x(indices[1] + 0), x(indices[1] + 1), x(indices[1] + 2);
+		v2 << x(indices[2] + 0), x(indices[2] + 1), x(indices[2] + 2);
+		v3 << x(indices[3] + 0), x(indices[3] + 1), x(indices[3] + 2);
+	}
+
+	Mat3 F;
+	{
+		Vec3 ds1 = v1 - v0;
+		Vec3 ds2 = v2 - v0;
+		Vec3 ds3 = v3 - v0;
+
+		Mat3 Ds;
+		Ds <<
+			ds1[0], ds2[0], ds3[0],
+			ds1[1], ds2[1], ds3[1],
+			ds1[2], ds2[2], ds3[2];
+		Mat3 DmInv = DmInvs[i];
+		F = Ds * DmInv;
+	}
+
+	Mat3 P, U, V, R;
+	Vec3 Sigma;
+	{
+		using namespace Eigen;
+		JacobiSVD<Mat3> SVD(F, ComputeFullU | ComputeFullV);
+		Sigma = SVD.singularValues();
+		U = SVD.matrixU();
+		V = SVD.matrixV();
+
+		R = U * V.transpose();
+		P = mu * (F - R);
+	}
+	// calculate forces
+	{
+		Vec9 Pv = Flatten(P);
+		Mat9x12 dFdx = dFdxs[i];
+
+		Vec12 fEl = dFdx.transpose() * Pv;
+		fEl *= -tetVols[i];
+
+		fIntArray[i] = fEl;
+	}
+	// get jacobian
+	{
+		Mat9 dPdF;
+		{
+			double eigenLambda[3];
+			eigenLambda[0] = 2.0 / (Sigma(0) + Sigma(1));
+			eigenLambda[1] = 2.0 / (Sigma(1) + Sigma(2));
+			eigenLambda[2] = 2.0 / (Sigma(0) + Sigma(2));
+
+			if (Sigma(0) + Sigma(1) < 2.0)
+				eigenLambda[0] = 1.0;
+
+			if (Sigma(1) + Sigma(2) < 2.0)
+				eigenLambda[1] = 1.0;
+
+			if (Sigma(0) + Sigma(2) < 2.0)
+				eigenLambda[2] = 1.0;
+
+			Vec9 Q[3];
+			for(int el = 0; el < 3; ++el)
+				Q[i] = Flatten(sq2inv * U * Twist[el] * V.transpose());
+
+			dPdF.setIdentity();
+			for (int el = 0; el < 3; ++el)
+				dPdF -= eigenLambda[el] * Q[el] * Q[el].transpose();
+			dPdF *= 2.0;
+		}
+
+		Mat9x12 dFdx = dFdxs[i];
+		Mat12 dPdx = dFdx.transpose() * dPdF * dFdx;
+		dPdx *= -tetVols[i];
+
+		KelArray[i] = dPdx;
+	}
+}
+
+void Solver::AddToKeff(const Mat12& dPdx, int elem)
+{
+	int* indices = &(indexArray[4*elem]);
 	for (int x = 0; x < 4; ++x)
 	{
 		for (int y = 0; y < 4; ++y)

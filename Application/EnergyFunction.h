@@ -383,7 +383,7 @@ public:
 		this->F = F;
 		// P = mu(F - R);
 		using namespace Eigen;
-		Eigen::JacobiSVD<Mat3> SVD(F, ComputeFullU | ComputeFullV);
+		JacobiSVD<Mat3> SVD(F, ComputeFullU | ComputeFullV);
 		Sigma = SVD.singularValues();
 		U = SVD.matrixU();
 		V = SVD.matrixV();
