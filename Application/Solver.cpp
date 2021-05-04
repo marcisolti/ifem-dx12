@@ -380,13 +380,8 @@ Vec Solver::Step()
 
 void Solver::ComputeElementJacobianAndHessian(int i)
 {
-	const int* indices = &(indexArray[4*i]);
-	std::cout << i << ": "
-		<< indices[0] << "; "
-		<< indices[1] << "; "
-		<< indices[2] << "; "
-		<< indices[3] << '\n';
-	
+	const int* indices = &(indexArray[4 * i]);
+
 	Vec3 v0, v1, v2, v3;
 	{
 		v0 << x(indices[0] + 0), x(indices[0] + 1), x(indices[0] + 2);
@@ -451,8 +446,8 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 				eigenLambda[2] = 1.0;
 
 			Vec9 Q[3];
-			for(int el = 0; el < 3; ++el)
-				Q[i] = Flatten(sq2inv * U * Twist[el] * V.transpose());
+			for (int el = 0; el < 3; ++el)
+				Q[el] = Flatten(sq2inv * U * Twist[el] * V.transpose());
 
 			dPdF.setIdentity();
 			for (int el = 0; el < 3; ++el)
@@ -466,6 +461,7 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 
 		KelArray[i] = dPdx;
 	}
+
 }
 
 void Solver::AddToKeff(const Mat12& dPdx, int elem)
