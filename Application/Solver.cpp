@@ -7,6 +7,8 @@ Interpolator interpolator;
 
 Vec Solver::StartUp(json* config)
 {
+	solver.setMaxIterations(50);
+
 	// read config
 	{
 		h			  = (*config)["sim"]["stepSize"];
@@ -41,7 +43,7 @@ Vec Solver::StartUp(json* config)
 
 		// set material
 		{	
-			double E					 = (*config)["sim"]["material"]["E"];
+			double E					 = (*config)["sim"]["material"]["E"] * 1.0e6;
 			double nu					 = (*config)["sim"]["material"]["nu"];
 			const std::string energyName = (*config)["sim"]["material"]["energyFunction"];
 			
@@ -111,7 +113,7 @@ Vec Solver::StartUp(json* config)
 
 		for (auto bc : BCs)
 		{
-			int index = 3 * (bc - 1);
+			int index = 3 * bc;
 			S.coeffRef(index + 0, index + 0) = 0.0;
 			S.coeffRef(index + 1, index + 1) = 0.0;
 			S.coeffRef(index + 2, index + 2) = 0.0;
@@ -316,9 +318,8 @@ Vec Solver::Step()
 			solver.compute(SystemMatrix);
 			Vec dv = solver.solve(SystemVec);
 
-			v.noalias() += dv;
-			u = h * v;
-			x.noalias() += magicConstant * u;
+			v.noalias() += magicConstant * dv;
+			x.noalias() += h * v;
 		}
 		break;
 		case Newmark:
@@ -449,13 +450,11 @@ void Solver::FillFint()
 	for (int i = 0; i < numElements; ++i)
 	{
 		int* indices = &(indexArray[4 * i]);
+	
 		for (int el = 0; el < 4; ++el)
-		{
 			for (int incr = 0; incr < 3; ++incr)
-			{
 				fInt(indices[el] + incr) += fIntArray[i](3 * el + incr);
-			}
-		}
+	
 	}
 }
 
@@ -464,19 +463,13 @@ void Solver::FillKeff()
 	for (int i = 0; i < numElements; ++i)
 	{
 		int* indices = &(indexArray[4 * i]);
+	
 		for (int y = 0; y < 4; ++y)
-		{
 			for (int x = 0; x < 4; ++x)
-			{
 				for (int innerY = 0; innerY < 3; ++innerY)
-				{
 					for (int innerX = 0; innerX < 3; ++innerX)
-					{
 						Keff.coeffRef(indices[x] + innerX, indices[y] + innerY) += KelArray[i](3 * x + innerX, 3 * y + innerY);
-					}
-				}
-			}
-		}
+	
 	}
 }
 
@@ -484,18 +477,10 @@ void Solver::AddToKeff(const Mat12& dPdx, int elem)
 {
 	int* indices = &(indexArray[4*elem]);
 	for (int y = 0; y < 4; ++y)
-	{
 		for (int x = 0; x < 4; ++x)
-		{
 			for (int innerX = 0; innerX < 3; ++innerX)
-			{
 				for (int innerY = 0; innerY < 3; ++innerY)
-				{
 					Keff.coeffRef(indices[x] + innerX, indices[y] + innerY) += dPdx(3 * x + innerX, 3 * y + innerY);
-				}
-			}
-		}
-	}
 }
 
 Mat3 Solver::ComputeDm(int i)

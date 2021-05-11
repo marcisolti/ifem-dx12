@@ -81,6 +81,9 @@
     <ClInclude Include="Solver.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Media\configs\beam-bwEuler.json" />
+    <None Include="..\Media\configs\beam-qStatic.json" />
+    <None Include="..\Media\configs\bwEuler-ARAP.json" />
     <None Include="..\Media\configs\bwEuler-SNH.json" />
     <None Include="..\Media\configs\root.json" />
   </ItemGroup>

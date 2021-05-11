@@ -33,5 +33,14 @@
     <None Include="..\Media\configs\bwEuler-SNH.json">
       <Filter>config</Filter>
     </None>
+    <None Include="..\Media\configs\bwEuler-ARAP.json">
+      <Filter>config</Filter>
+    </None>
+    <None Include="..\Media\configs\beam-bwEuler.json">
+      <Filter>config</Filter>
+    </None>
+    <None Include="..\Media\configs\beam-qStatic.json">
+      <Filter>config</Filter>
+    </None>
   </ItemGroup>
 </Project>

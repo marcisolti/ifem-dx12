@@ -768,6 +768,12 @@ int main(int, char**)
         )
     );
 
+    //renderer.Transform(
+    //    0,
+    //    Float4x4::Scaling({ 8,8,8 })
+    //);
+
+
 
     renderer.UploadTextures();
 

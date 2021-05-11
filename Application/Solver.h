@@ -123,7 +123,7 @@ public:
 
 
 private:
-	void	ComputeElementJacobianAndHessian(int i);
+	void ComputeElementJacobianAndHessian(int i);
 	void AddToKeff(const Mat12& dPdx, int elem);
 
 	void FillFint();
