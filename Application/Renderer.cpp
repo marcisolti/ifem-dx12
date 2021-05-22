@@ -154,7 +154,7 @@ void Renderer::Draw()
 
             commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-            const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+            const float clearColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
             commandList->ClearRenderTargetView(rtvHeap->GetCPUHandle(backBufferIdx), clearColor, 0, nullptr);
             commandList->ClearDepthStencilView(dsvHeap->GetCPUHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 

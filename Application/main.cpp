@@ -727,7 +727,6 @@ int main(int, char**)
     std::ofstream o(configPath);
     o << std::setw(4) << config << std::endl;
     
-    
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, "ImGui Example", NULL };
@@ -761,17 +760,18 @@ int main(int, char**)
     sim.StartUp(&renderer, &config);
 
     renderer.Transform(
-        0, 
+        1, 
         Float4x4::Rotation(
             { 0, 1, 0 }, 
             3.14156
+            //0.0
         )
     );
 
-    //renderer.Transform(
-    //    0,
-    //    Float4x4::Scaling({ 8,8,8 })
-    //);
+    renderer.Transform(
+        0,
+        Float4x4::Translation({ 50,50,50 })
+    );
 
 
 

@@ -42,5 +42,11 @@
     <None Include="..\Media\configs\beam-qStatic.json">
       <Filter>config</Filter>
     </None>
+    <None Include="..\Media\configs\turtle-qStatic-ARAP.json">
+      <Filter>config</Filter>
+    </None>
+    <None Include="..\Media\configs\dragon-pancake.json">
+      <Filter>config</Filter>
+    </None>
   </ItemGroup>
 </Project>

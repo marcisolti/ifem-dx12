@@ -4,7 +4,7 @@
 #include <Eigen/Sparse>
 #include <Eigen/IterativeLinearSolvers>
 
-#include <Eigen/PardisoSupport>
+//#include <Eigen/PardisoSupport>
 
 #include "vega/volumetricMesh/volumetricMesh.h"
 #include "vega/volumetricMesh/volumetricMeshLoader.h"
@@ -111,6 +111,8 @@ class Solver
 	// linear solver objects
 	Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper> solver;
 	//Eigen::PardisoLU<SpMat> solver;
+
+	double FTime, PTime, dPdxTime;
 
 public:
 	Solver() = default;

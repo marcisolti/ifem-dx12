@@ -3,6 +3,10 @@
 using namespace Egg;
 using namespace Egg::Math;
 
+#include <iostream>
+#include <Xinput.h>
+#define INPUT_DEADZONE 5000
+
 Cam::FirstPerson::FirstPerson()
 {
 	position = Float3::UnitZ * -10.0;
@@ -97,6 +101,14 @@ void Cam::FirstPerson::UpdateProj()
 
 void Cam::FirstPerson::Animate(double dt)
 {
+	if (qPressed)
+	{
+		position = { 0,0,0 };
+		yaw = 0;
+		pitch = 0;
+	}
+
+
 	if(wPressed)
 		position += ahead * (shiftPressed?speed*5.0:speed) * dt;
 	if(sPressed)
@@ -105,16 +117,101 @@ void Cam::FirstPerson::Animate(double dt)
 		position -= right * (shiftPressed?speed*5.0:speed) * dt;
 	if(dPressed)
 		position += right * (shiftPressed?speed*5.0:speed) * dt;
-	if(qPressed)
+	/*if(qPressed)
 		position -= Float3(0,1,0) * (shiftPressed?speed*5.0:speed) * dt;
 	if(ePressed)
-		position += Float3(0,1,0) * (shiftPressed?speed*5.0:speed) * dt;
+		position += Float3(0,1,0) * (shiftPressed?speed*5.0:speed) * dt;*/
 
-	yaw += mouseDelta.x * 0.02f;
-	pitch += mouseDelta.y * 0.02f;
-	pitch = Float1(pitch).Clamp(-3.14/2, +3.14/2).x;
+	DWORD dwResult;
+	DWORD cindex;
+	for (DWORD i = 0; i < XUSER_MAX_COUNT; i++)
+	{
+		XINPUT_STATE state;
+		ZeroMemory(&state, sizeof(XINPUT_STATE));
 
+		// Simply get the state of the controller from XInput.
+		dwResult = XInputGetState(i, &state);
+
+		if (dwResult == ERROR_SUCCESS)
+		{
+			// Controller is connected
+			cindex = i;
+		}
+		else
+		{
+			// Controller is not connected
+		}
+	}
+	//XINPUT_STATE state = g_Controllers[i].state;
+	XINPUT_STATE state;
+	ZeroMemory(&state, sizeof(XINPUT_STATE));
+
+	// Simply get the state of the controller from XInput.
+	dwResult = XInputGetState(cindex, &state);
+
+	if (dwResult == ERROR_SUCCESS)
+	{
+		// Controller is connected
+
+		std::vector<Float2> T
+		{
+			{ (float)state.Gamepad.sThumbLX, (float)state.Gamepad.sThumbLY },
+			{ (float)state.Gamepad.sThumbRX, (float)state.Gamepad.sThumbRY }
+		};
+
+		double nmagnitude[] = { 0,0 };
+		for (int i = 0; i < T.size(); ++i)
+		{
+			//determine how far the controller is pushed
+			float magnitude = std::sqrt(T[i].x * T[i].x+ T[i].y* T[i].y);
+
+			//check if the controller is outside a circular dead zone
+			if (magnitude > INPUT_DEADZONE)
+			{
+				//clip the magnitude at its expected maximum value
+				if (magnitude > 32767) magnitude = 32767;
+
+				//adjust magnitude relative to the end of the dead zone
+				magnitude -= INPUT_DEADZONE;
+
+				//optionally normalize the magnitude with respect to its expected range
+				//giving a magnitude value of 0.0 to 1.0
+				nmagnitude[i] = magnitude / (32767 - INPUT_DEADZONE);
+			}
+			else //if the controller is in the deadzone zero out the magnitude
+			{
+				magnitude = 0.0;
+				nmagnitude[i] = 0.0;
+			}
+		}
+
+		float RT = (float)state.Gamepad.bRightTrigger / 255;
+		float LT = (float)state.Gamepad.bLeftTrigger / 255;
+		float eps = 0.15;
+		if (RT > eps)
+			position += Float3{ 0, 1, 0 } * RT/10;
+		if (LT > eps)
+			position -= Float3{ 0, 1, 0 } * LT/10;
+
+
+		Float3 newPos = position + (right * T[0].Normalize().x + ahead * T[0].Normalize().y) * nmagnitude[0]/10;
+		if (!std::isnan(newPos.x) && !std::isnan(newPos.y) && !std::isnan(newPos.z))
+			position = newPos;
+
+		//repeat for right thumb stick
+
+		std::cout << RT << ',' << LT << "p:" << position.x << ',' << position.y << ',' << position.z << '\n';
+
+		yaw += T[1].Normalize().x   * nmagnitude[1] / 100;
+		pitch -= T[1].Normalize().y * nmagnitude[1] / 100;
+	}
+	else
+	{
+		// Controller is not connected
+	}
+	pitch = Float1(pitch).Clamp(-3.14 / 2, +3.14 / 2).x;
 	mouseDelta = Float2::Zero;
+
 
 	ahead = Float3(sin(yaw)*cos(pitch), -sin(pitch), cos(yaw)*cos(pitch) );
 

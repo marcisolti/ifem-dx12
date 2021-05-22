@@ -2,12 +2,17 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <iomanip>
+
 
 Interpolator interpolator;
 
 Vec Solver::StartUp(json* config)
 {
-	solver.setMaxIterations(50);
+	std::cout << std::fixed;
+	std::cout << std::setprecision(4);
+
+	solver.setMaxIterations((*config)["sim"]["cgIterations"]);
 
 	// read config
 	{
@@ -256,18 +261,23 @@ Vec Solver::Step()
 	for (;;)
 	{
 		// build Keff
+		FTime = PTime = dPdxTime = 0.0;
 		PerformanceCounter jacobian;
-		//for (int i = 0; i < numElements; i++)
-		//	ComputeElementJacobianAndHessian(i);
+		for (int i = 0; i < numElements; i++)
+			ComputeElementJacobianAndHessian(i);
 
-		tbb::parallel_for(
-			tbb::blocked_range<size_t>(0, numElements),
-			[=](const tbb::blocked_range<size_t>& r)
-			{
-				for (size_t i = r.begin(); i != r.end(); ++i)
-					ComputeElementJacobianAndHessian(i);
-			}
-		);
+		//tbb::parallel_for(
+		//	tbb::blocked_range<size_t>(0, numElements),
+		//	[=](const tbb::blocked_range<size_t>& r)
+		//	{
+		//		for (size_t i = r.begin(); i != r.end(); ++i)
+		//			ComputeElementJacobianAndHessian(i);
+		//	}
+		//);
+
+		jacobian.StopCounter();
+
+		PerformanceCounter accu;
 
 		// accumulating Keff and fInt
 		{
@@ -282,22 +292,34 @@ Vec Solver::Step()
 			FillKeff();
 			*/
 		}
-		jacobian.StopCounter();
-		std::cout << " built Keff in " << jacobian.GetElapsedTime() << "; ";
+		accu.StopCounter();
 
-		PerformanceCounter solution;
+		std::cout << " K:" << jacobian.GetElapsedTime() 
+			<< "; a:" << accu.GetElapsedTime()
+			<< "; F:" << FTime 
+			<< "; P:" << PTime 
+			<< "; dP:" << dPdxTime << "  ";
+
 		switch (integrator)
 		{
 		case qStatic:
 		{
+			PerformanceCounter proj;
 			// boundary condition projection
-			SpMat SystemMatrix = S * Keff * S + spI - S;
-			Vec SystemVec = S * (-fInt + fExt);
+			const SpMat SystemMatrix = S * Keff * S + spI - S;
+			const Vec SystemVec = S * (-fInt + fExt);
+			proj.StopCounter();
 
+
+			PerformanceCounter solution;
 			solver.compute(SystemMatrix);
 			Vec u = solver.solve(SystemVec);
 
 			x.noalias() += h * magicConstant * u;
+			solution.StopCounter();
+
+			std::cout << "solved in " << solution.GetElapsedTime() << "; p:" << proj.GetElapsedTime() << '\n';
+
 		}
 		break;
 		case bwEuler:
@@ -350,8 +372,6 @@ Vec Solver::Step()
 		}
 		break;
 		}
-		solution.StopCounter();
-		std::cout << "solved in " << solution.GetElapsedTime() << '\n';
 
 		if(++substep >= numSubsteps)
 			break;
@@ -364,6 +384,7 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 {
 	const int* indices = &(indexArray[4 * i]);
 
+	PerformanceCounter FCounter;
 	Mat3 F;
 	{
 		Vec3 v0, v1, v2, v3;
@@ -385,8 +406,13 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 		const Mat3 DmInv = DmInvs[i];
 		F = Ds * DmInv;
 	}
-
-	Mat3 P, U, V, R;
+	FCounter.StopCounter();
+	FTime += FCounter.GetElapsedTime();
+	
+	PerformanceCounter PCounter;
+	Mat3 P;
+	// ARAP
+	Mat3 U, V, R;
 	Vec3 Sigma;
 	{
 		using namespace Eigen;
@@ -398,6 +424,32 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 		R = U * V.transpose();
 		P = mu * (F - R);
 	}
+	//Neo-Hookean
+	/*
+	Vec3 f0, f1, f2;
+	Mat3 dJdF;
+	double J;
+	{
+
+		J = F.determinant();
+
+		f0 << F(0, 0), F(0, 1), F(0, 2);
+		f1 << F(1, 0), F(1, 1), F(1, 2);
+		f2 << F(2, 0), F(2, 1), F(2, 2);
+
+		Vec3 dJdF_0 = f1.cross(f2);
+		Vec3 dJdF_1 = f2.cross(f0);
+		Vec3 dJdF_2 = f0.cross(f1);
+
+		dJdF <<
+			dJdF_0(0), dJdF_1(0), dJdF_2(0),
+			dJdF_0(1), dJdF_1(1), dJdF_2(1),
+			dJdF_0(2), dJdF_1(2), dJdF_2(2);
+
+		P = mu * (F - 1.0 / J * dJdF) + ((lambda * std::log(J)) / J) * dJdF;
+	}
+	*/
+
 
 	const double tetVol = tetVols[i];
 	// calculate forces
@@ -409,23 +461,22 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 
 		fIntArray[i] = fEl;
 	}
+	PCounter.StopCounter();
+	PTime += PCounter.GetElapsedTime();
 	// get jacobian
 	{
+		PerformanceCounter dPCounter;
 		Mat9 dPdF;
+		//ARAP
 		{
-			double eigenLambda[3];
-			eigenLambda[0] = 2.0 / (Sigma(0) + Sigma(1));
-			eigenLambda[1] = 2.0 / (Sigma(1) + Sigma(2));
-			eigenLambda[2] = 2.0 / (Sigma(0) + Sigma(2));
+			double I[3];
+			I[0] = Sigma(0) + Sigma(1);
+			I[1] = Sigma(1) + Sigma(2);
+			I[2] = Sigma(0) + Sigma(2);
 
-			if (Sigma(0) + Sigma(1) < 2.0)
-				eigenLambda[0] = 1.0;
-
-			if (Sigma(1) + Sigma(2) < 2.0)
-				eigenLambda[1] = 1.0;
-
-			if (Sigma(0) + Sigma(2) < 2.0)
-				eigenLambda[2] = 1.0;
+			double lambda[3];
+			for (int i = 0; i < 3; ++i)
+				(I[i] >= 2.0) ? lambda[i] = 2.0 / I[i] : lambda[i] = 1.0;
 
 			Vec9 Q[3];
 			for (int el = 0; el < 3; ++el)
@@ -433,16 +484,62 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 
 			dPdF.setIdentity();
 			for (int el = 0; el < 3; ++el)
-				dPdF -= eigenLambda[el] * Q[el] * Q[el].transpose();
+				dPdF -= lambda[el] * Q[el] * Q[el].transpose();
 			dPdF *= 2.0;
 		}
+		//Neo-Hookean
+		/*
+		{
+			Vec9 gJ = Flatten(dJdF);
+
+			Mat9 gJgJT = gJ * gJ.transpose();
+
+			Mat3 f0Hat, f1Hat, f2Hat;
+			f0Hat <<
+				0.0, -f0(2), f0(1),
+				f0(2), 0.0, -f0(0),
+				-f0(1), f0(0), 0.0;
+
+			f1Hat <<
+				0.0, -f1(2), f1(1),
+				f1(2), 0.0, -f1(0),
+				-f1(1), f1(0), 0.0;
+
+			f2Hat <<
+				0.0, -f2(2), f2(1),
+				f2(2), 0.0, -f2(0),
+				-f2(1), f2(0), 0.0;
+
+			Mat9 HJ;
+			HJ <<
+				0.0, 0.0, 0.0, -f2Hat(0, 0), -f2Hat(0, 1), -f2Hat(0, 2), f1Hat(0, 0), f1Hat(0, 1), f1Hat(0, 2),
+				0.0, 0.0, 0.0, -f2Hat(1, 0), -f2Hat(1, 1), -f2Hat(1, 2), f1Hat(1, 0), f1Hat(1, 1), f1Hat(1, 2),
+				0.0, 0.0, 0.0, -f2Hat(2, 0), -f2Hat(2, 1), -f2Hat(2, 2), f1Hat(2, 0), f1Hat(2, 1), f1Hat(2, 2),
+
+				f2Hat(0, 0), f2Hat(0, 1), f2Hat(0, 2), 0.0, 0.0, 0.0, -f0Hat(0, 0), -f0Hat(0, 1), -f0Hat(0, 2),
+				f2Hat(1, 0), f2Hat(1, 1), f2Hat(1, 2), 0.0, 0.0, 0.0, -f0Hat(1, 0), -f0Hat(1, 1), -f0Hat(1, 2),
+				f2Hat(2, 0), f2Hat(2, 1), f2Hat(2, 2), 0.0, 0.0, 0.0, -f0Hat(2, 0), -f0Hat(2, 1), -f0Hat(2, 2),
+
+				-f1Hat(0, 0), -f1Hat(0, 1), -f1Hat(0, 2), f0Hat(0, 0), f0Hat(0, 1), f0Hat(0, 2), 0.0, 0.0, 0.0,
+				-f1Hat(1, 0), -f1Hat(1, 1), -f1Hat(1, 2), f0Hat(1, 0), f0Hat(1, 1), f0Hat(1, 2), 0.0, 0.0, 0.0,
+				-f1Hat(2, 0), -f1Hat(2, 1), -f1Hat(2, 2), f0Hat(2, 0), f0Hat(2, 1), f0Hat(2, 2), 0.0, 0.0, 0.0;
+
+			dPdF = 
+				mu * Mat9::Identity() +
+				((mu + lambda * (1.0 - std::log(J))) / (J * J)) * gJgJT +
+				((lambda * std::log(J) - mu) / J) * HJ;
+
+		}
+		*/
 
 		const Mat9x12 dFdx = dFdxs[i];
 		const Mat12 dPdx = -tetVol * dFdx.transpose() * dPdF * dFdx;
 
 		KelArray[i] = dPdx;
-	}
 
+		dPCounter.StopCounter();
+		dPdxTime += dPCounter.GetElapsedTime();
+	}
 }
 
 void Solver::FillFint()

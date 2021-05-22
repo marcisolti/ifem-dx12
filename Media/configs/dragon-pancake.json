@@ -28,27 +28,30 @@
     "scene": [
         {
             "mesh": "bunny.obj",
-            "texture": "white.png",
+            "texture": "floor.png",
             "transform": [
+                6.0,
                 0.0,
+                -5.0
+            ]
+        },
+        {
+            "mesh": "sphere.fbx",
+            "texture": "checkered.png",
+            "transform": [
+                -6.0,
                 0.0,
-                0.0
+                5.0
             ]
         }
     ],
     "sim": {
         "BCs": [
-            0,
-            1,
-            52,
-            53,
-            104,
-            105,
-            156,
-            157
+            51,
+            127,
+            178
         ],
-        "cgIterations": 100,
-        "initConfig": "r",
+        "initConfig": "pz",
         "integrator": "qStatic",
         "loadCases": {
             "loadSteps": [
@@ -57,43 +60,24 @@
                     "t": 0.0
                 },
                 {
-                    "f": 100.0,
-                    "t": 1.0
-                },
-                {
-                    "f": 0.0,
-                    "t": 1.1
-                },
-                {
-                    "f": 0.0,
-                    "t": 2.7
-                },
-                {
                     "f": 0.0,
                     "t": 100.0
                 }
             ],
             "nodes": [
-                50,
-                51,
-                102,
-                103,
-                154,
-                155,
-                206,
-                207
+                890
             ]
         },
-        "magicConstant": 5e-05,
+        "magicConstant": 0.0001,
         "material": {
-            "E": 100.0,
+            "E": 1.0,
             "alpha": 0.01,
             "beta": 5.0,
             "energyFunction": "ARAP",
-            "nu": 0.1,
+            "nu": 0.45,
             "rho": 1000.0
         },
-        "model": "beam3_tet",
+        "model": "asianDragon",
         "numSubsteps": 1,
         "stepSize": 0.001
     }
