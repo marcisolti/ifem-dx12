@@ -25,26 +25,7 @@
             ]
         }
     ],
-    "scene": [
-        {
-            "mesh": "bunny.obj",
-            "texture": "floor.png",
-            "transform": [
-                6.0,
-                0.0,
-                -5.0
-            ]
-        },
-        {
-            "mesh": "sphere.fbx",
-            "texture": "checkered.png",
-            "transform": [
-                -6.0,
-                0.0,
-                5.0
-            ]
-        }
-    ],
+    "scene": [],
     "sim": {
         "BCs": [
             1,
@@ -81,16 +62,16 @@
                     "t": 0.0
                 },
                 {
-                    "f": -5000000.0,
+                    "f": -2000000.0,
                     "t": 0.2
                 },
                 {
-                    "f": -5000000.0,
-                    "t": 0.5
+                    "f": -2000000.0,
+                    "t": 0.3
                 },
                 {
                     "f": 0.0,
-                    "t": 1.0
+                    "t": 0.5
                 },
                 {
                     "f": 0.0,
@@ -101,13 +82,13 @@
                 889
             ]
         },
-        "magicConstant": 1e-06,
+        "magicConstant": 1e-05,
         "material": {
             "E": 20.0,
             "alpha": 0.01,
             "beta": 5.0,
             "energyFunction": "ARAP",
-            "nu": 0.35,
+            "nu": 0.45,
             "rho": 1000.0
         },
         "model": "turtle",

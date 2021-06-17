@@ -15,7 +15,7 @@ Cam::FirstPerson::FirstPerson()
 	yaw = 0.0;
 	pitch = 0.0;
 
-	fov = 1.57f;
+	fov = 1.15f;
 	nearPlane = 0.5f;
 	farPlane = 100.0f;
 	SetAspect(1.33f);
@@ -101,13 +101,6 @@ void Cam::FirstPerson::UpdateProj()
 
 void Cam::FirstPerson::Animate(double dt)
 {
-	if (qPressed)
-	{
-		position = { 0,0,0 };
-		yaw = 0;
-		pitch = 0;
-	}
-
 
 	if(wPressed)
 		position += ahead * (shiftPressed?speed*5.0:speed) * dt;
@@ -117,10 +110,10 @@ void Cam::FirstPerson::Animate(double dt)
 		position -= right * (shiftPressed?speed*5.0:speed) * dt;
 	if(dPressed)
 		position += right * (shiftPressed?speed*5.0:speed) * dt;
-	/*if(qPressed)
+	if(qPressed)
 		position -= Float3(0,1,0) * (shiftPressed?speed*5.0:speed) * dt;
 	if(ePressed)
-		position += Float3(0,1,0) * (shiftPressed?speed*5.0:speed) * dt;*/
+		position += Float3(0,1,0) * (shiftPressed?speed*5.0:speed) * dt;
 
 	DWORD dwResult;
 	DWORD cindex;
@@ -142,7 +135,6 @@ void Cam::FirstPerson::Animate(double dt)
 			// Controller is not connected
 		}
 	}
-	//XINPUT_STATE state = g_Controllers[i].state;
 	XINPUT_STATE state;
 	ZeroMemory(&state, sizeof(XINPUT_STATE));
 
@@ -159,11 +151,14 @@ void Cam::FirstPerson::Animate(double dt)
 			{ (float)state.Gamepad.sThumbRX, (float)state.Gamepad.sThumbRY }
 		};
 
+
 		double nmagnitude[] = { 0,0 };
 		for (int i = 0; i < T.size(); ++i)
 		{
 			//determine how far the controller is pushed
 			float magnitude = std::sqrt(T[i].x * T[i].x+ T[i].y* T[i].y);
+			//std::cout << magnitude << ' ';
+
 
 			//check if the controller is outside a circular dead zone
 			if (magnitude > INPUT_DEADZONE)
@@ -184,6 +179,7 @@ void Cam::FirstPerson::Animate(double dt)
 				nmagnitude[i] = 0.0;
 			}
 		}
+		//std::cout << '\n';
 
 		float RT = (float)state.Gamepad.bRightTrigger / 255;
 		float LT = (float)state.Gamepad.bLeftTrigger / 255;
@@ -193,22 +189,34 @@ void Cam::FirstPerson::Animate(double dt)
 		if (LT > eps)
 			position -= Float3{ 0, 1, 0 } * LT/10;
 
+		//std::cout << T[0].x << ',' << T[0].y << ';' << T[1].x << ',' << T[1].y << '\n';
+		
+		// man! 
+		for (int i = 0; i < T.size(); ++i)
+		{
+			if (std::abs(T[i].x) > 0.001 && std::abs(T[i].x) > 0.001) 
+			{
+				T[i] = T[i].Normalize();
+			}
+			else
+			{
+				T[i] = { 0,0 };
+			}
+		}
+		
+		position += (right * T[0].x + ahead * T[0].y) * nmagnitude[0] / 10;
 
-		Float3 newPos = position + (right * T[0].Normalize().x + ahead * T[0].Normalize().y) * nmagnitude[0]/10;
-		if (!std::isnan(newPos.x) && !std::isnan(newPos.y) && !std::isnan(newPos.z))
-			position = newPos;
-
-		//repeat for right thumb stick
-
-		std::cout << RT << ',' << LT << "p:" << position.x << ',' << position.y << ',' << position.z << '\n';
-
-		yaw += T[1].Normalize().x   * nmagnitude[1] / 100;
-		pitch -= T[1].Normalize().y * nmagnitude[1] / 100;
+		yaw += T[1].x   * nmagnitude[1] / 100;
+		pitch -= T[1].y * nmagnitude[1] / 100;
 	}
 	else
 	{
 		// Controller is not connected
 	}
+
+	yaw += mouseDelta.x / 100;
+	pitch += mouseDelta.y / 100;
+
 	pitch = Float1(pitch).Clamp(-3.14 / 2, +3.14 / 2).x;
 	mouseDelta = Float2::Zero;
 
@@ -268,6 +276,7 @@ void Cam::FirstPerson::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		ePressed = false;
 		shiftPressed = false;
 	}
+	
 	else if(uMsg == WM_RBUTTONDOWN)
 	{
 		lastMousePos = Int2( LOWORD(lParam), HIWORD(lParam));
@@ -284,6 +293,7 @@ void Cam::FirstPerson::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 		lastMousePos = mousePos;
 	}
+	
 }
 
 void Cam::FirstPerson::SetAspect(float aspect)

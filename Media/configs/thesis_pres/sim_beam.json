@@ -3,8 +3,8 @@
         {
             "color": [
                 1.0,
-                0.0,
-                0.0
+                1.0,
+                1.0
             ],
             "pos": [
                 10.0,
@@ -14,9 +14,9 @@
         },
         {
             "color": [
-                0.8,
-                0.8,
-                1.5
+                1.0,
+                1.0,
+                1.0
             ],
             "pos": [
                 -6.0,
@@ -25,8 +25,7 @@
             ]
         }
     ],
-    "scene": [
-    ],
+    "scene": [],
     "sim": {
         "BCs": [
             0,
@@ -38,9 +37,9 @@
             156,
             157
         ],
+        "cgIterations": 200,
         "initConfig": "r",
         "integrator": "qStatic",
-        "cgIterations": 200,
         "loadCases": {
             "loadSteps": [
                 {

@@ -37,11 +37,15 @@ void Simulator::Step()
 void Simulator::Update()
 {
 	int index = (*config)["app"]["displayIndex"];
+	Vec currentPos = posArray[index];
 	for (size_t i = 0; i < numDOFs / 3; ++i)
 	{
-		surfaceGeo->vertices[i].position.x = posArray[index](3 * i + 0);
-		surfaceGeo->vertices[i].position.y = posArray[index](3 * i + 1);
-		surfaceGeo->vertices[i].position.z = posArray[index](3 * i + 2);
+		Float3 newPos{
+			(float)currentPos(3 * i + 0),
+			(float)currentPos(3 * i + 1),
+			(float)currentPos(3 * i + 2)
+		};
+		surfaceGeo->vertices[i].position = newPos;
 	}
 
 

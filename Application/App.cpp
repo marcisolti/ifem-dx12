@@ -32,9 +32,12 @@ void App::Update()
 
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
+        double solverTime = (*config)["solverTime"];
+        ImGui::Text("Solution time: %.6f s", solverTime);
+
         ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
 
-        static bool playing = false;
+        static bool playing = true;
         if (ImGui::Button("Play/Pause"))
             playing = !playing;
 

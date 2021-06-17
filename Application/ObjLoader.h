@@ -45,8 +45,13 @@ public:
 			std::cout << "opened " << path << std::endl;
 		}
 
-		for (std::string line; std::getline(file, line); )
+		int count = 0;
+		for (std::string line; std::getline(file, line); ) {
+			if (count++ % 1000 == 0) {
+				std::cout << "at " << count << '\n';
+			}
 			parse(line, mesh);
+		}
 
 
 		std::vector<PNT_Vertex> vertices;
