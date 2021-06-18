@@ -12,12 +12,12 @@ class Simulator
 {
 	GG::Geometry* surfaceGeo;
 
-	std::vector<Vec> posArray;
-
 	uint32_t numDOFs;
 	int stepNum;
 
 	json* config;
+
+	Vec currentPos;
 
 public:
 	Simulator() = default;
@@ -29,4 +29,3 @@ public:
 	void Step();
 	void Update();
 };
-

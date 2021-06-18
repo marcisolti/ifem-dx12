@@ -5,8 +5,6 @@
 #include <iomanip>
 
 
-Interpolator interpolator;
-
 Vec Solver::StartUp(json* config)
 {
 	this->config = config;
@@ -22,8 +20,6 @@ Vec Solver::StartUp(json* config)
 		magicConstant = (*config)["sim"]["magicConstant"];
 		
 		solver.setMaxIterations((*config)["sim"]["cgIterations"]);
-
-		interpolator.set(config);
 
 		// load mesh
 		{
@@ -80,8 +76,10 @@ Vec Solver::StartUp(json* config)
 		for(int i = 0; i < (*config)["sim"]["BCs"].size(); ++i)
 			BCs.push_back((*config)["sim"]["BCs"][i]);
 
+		/*
 		for (int i = 0; i < (*config)["sim"]["loadCases"]["nodes"].size(); ++i)
 			loadedVerts.push_back((*config)["sim"]["loadCases"]["nodes"][i]);
+		*/
 
 		std::string integratorName = (*config)["sim"]["integrator"];
 		if (integratorName == "qStatic")
@@ -151,6 +149,8 @@ Vec Solver::StartUp(json* config)
 	// create Keff, tbb arrays
 	{
 		Keff = SpMat(numDOFs, numDOFs);
+		spI = SpMat(numDOFs, numDOFs);
+		spI.setIdentity();
 
 		for (int i = 0; i < numElements; ++i)
 		{
@@ -179,8 +179,6 @@ Vec Solver::StartUp(json* config)
 	// set init position
 	{
 		std::srand(std::time(nullptr)); // use current time as seed for random generator
-
-
 
 		std::string initConfig = (*config)["sim"]["initConfig"];
 		for (size_t i = 0; i < mesh->getNumVertices(); ++i)
@@ -233,6 +231,12 @@ Vec Solver::StartUp(json* config)
 		}
 	}
 
+	(*config)["vertex"]["position"] = {
+		x(3 * loadedVert + 0),
+		x(3 * loadedVert + 1),
+		x(3 * loadedVert + 2)
+	};
+
 	x_0 = x;
 	return x;
 }
@@ -249,11 +253,11 @@ Vec Solver::Step()
 	int substep = 0;
 	T += h;
 
-	double loadValue = interpolator.get(T);
-	for (auto index : loadedVerts)
-	{
-		fExt(index)  = loadValue;
-	}
+	//double loadValue = interpolator.get(T);
+	//for (auto index : loadedVerts)
+	//{
+	//	fExt(index)  = loadValue;
+	//}
 
 	//std::cout << "T:" << T << "; fExt: " << loadValue << "; ";
 
@@ -286,16 +290,18 @@ Vec Solver::Step()
 
 		// accumulating Keff and fInt
 		{
-			std::thread KeffThread{ &Solver::FillKeff, this };
-			std::thread FintThread{ &Solver::FillFint, this };
-			
-			FintThread.join();
-			KeffThread.join();
+			//std::thread KeffThread{ &Solver::FillKeff, this };
+			//std::thread FintThread{ &Solver::FillFint, this };
+			//
+			//FintThread.join();
+			//KeffThread.join();
 
-			/*
+			// way faster! 
+			// maybe because you get this std::threads from the kernel
+			// which is a notoriously slow thing to do! 
 			FillFint();
 			FillKeff();
-			*/
+			
 		}
 
 		//std::cout << " K:" << jacobian.GetElapsedTime() 
@@ -306,31 +312,113 @@ Vec Solver::Step()
 
 		//std::cout << " K:" << jacobian.GetElapsedTime() << "; F:" << FTime << "; P:" << PTime << "; dPdx:" << dPdxTime << ' ';
 
+
+		SpMat S(numDOFs, numDOFs);
+		S.setIdentity();
+
+		Vec3 newV;
+		Vec3 p;
+		{
+
+			Vec3 newPos;
+			newPos << 
+				(double)(*config)["vertex"]["position"][0],
+				(double)(*config)["vertex"]["position"][1],
+				(double)(*config)["vertex"]["position"][2];
+
+			Vec3 currentPos;
+			currentPos <<
+				x(3 * loadedVert + 0),
+				x(3 * loadedVert + 1),
+				x(3 * loadedVert + 2);
+
+			p = newPos - currentPos;
+			newV = p / (h * magicConstant);
+
+			Mat3 subS;
+			subS.setIdentity();
+			subS -= p * p.transpose();
+
+			//Mat3 filteredK;
+			//filteredK <<
+			//	Keff.coeffRef(3 * loadedVert + 0, 3 * loadedVert + 0),
+			//	Keff.coeffRef(3 * loadedVert + 0, 3 * loadedVert + 1),
+			//	Keff.coeffRef(3 * loadedVert + 0, 3 * loadedVert + 2),
+
+			//	Keff.coeffRef(3 * loadedVert + 1, 3 * loadedVert + 0),
+			//	Keff.coeffRef(3 * loadedVert + 1, 3 * loadedVert + 1),
+			//	Keff.coeffRef(3 * loadedVert + 1, 3 * loadedVert + 2),
+
+			//	Keff.coeffRef(3 * loadedVert + 2, 3 * loadedVert + 0),
+			//	Keff.coeffRef(3 * loadedVert + 2, 3 * loadedVert + 1),
+			//	Keff.coeffRef(3 * loadedVert + 2, 3 * loadedVert + 2);
+
+			//filteredK = subS * filteredK * subS + Mat3::Identity() - subS;
+			
+			S.coeffRef(3 * loadedVert + 0, 3 * loadedVert + 0) = subS(0, 0);
+			S.coeffRef(3 * loadedVert + 0, 3 * loadedVert + 1) = subS(0, 1);
+			S.coeffRef(3 * loadedVert + 0, 3 * loadedVert + 2) = subS(0, 2);
+
+			S.coeffRef(3 * loadedVert + 1, 3 * loadedVert + 0) = subS(1, 0);
+			S.coeffRef(3 * loadedVert + 1, 3 * loadedVert + 1) = subS(1, 1);
+			S.coeffRef(3 * loadedVert + 1, 3 * loadedVert + 2) = subS(1, 2);
+
+			S.coeffRef(3 * loadedVert + 2, 3 * loadedVert + 0) = subS(2, 0);
+			S.coeffRef(3 * loadedVert + 2, 3 * loadedVert + 1) = subS(2, 1);
+			S.coeffRef(3 * loadedVert + 2, 3 * loadedVert + 2) = subS(2, 2);
+			
+			//Vec3 filteredFint;
+			//filteredFint <<
+			//	fInt(3 * loadedVert + 0),
+			//	fInt(3 * loadedVert + 1),
+			//	fInt(3 * loadedVert + 2);
+
+			//filteredFint = subS * filteredFint;
+			//fInt(3 * loadedVert + 0) = filteredFint(0);
+			//fInt(3 * loadedVert + 1) = filteredFint(1);
+			//fInt(3 * loadedVert + 2) = filteredFint(2);
+		}
+
 		switch (integrator)
 		{
 		case qStatic:
 		{
-			Vec SystemVec =  -fInt + fExt;
-			
+			//Vec SystemVec =  -fInt + fExt;
+			//fInt *= -1.0;
+
+			Vec z;
+			z.setZero(numDOFs);
+			z(3 * loadedVert + 0) = newV(0);
+			z(3 * loadedVert + 1) = newV(1);
+			z(3 * loadedVert + 2) = newV(2);
+
 			for (auto bc : BCs)
 			{
 				int index = 3 * bc;
-				Keff.coeffRef(index + 0, index + 0) = 1.0;
-				Keff.coeffRef(index + 1, index + 1) = 1.0;
-				Keff.coeffRef(index + 2, index + 2) = 1.0;
-
-				SystemVec(index + 0) = 0.0;
-				SystemVec(index + 1) = 0.0;
-				SystemVec(index + 2) = 0.0;
+				S.coeffRef(index + 0, index + 0) = 0.0;
+				S.coeffRef(index + 1, index + 1) = 0.0;
+				S.coeffRef(index + 2, index + 2) = 0.0;
 			}
 
+			SpMat SystemMatrix = S * Keff * S + spI - S;
+			Vec SystemVec = S * (-fInt);
+			
 			PerformanceCounter solution;
-			solver.compute(Keff);
+			solver.compute(SystemMatrix);
 			Vec u = solver.solve(SystemVec);
 
 			double constant = h * magicConstant;
 			x.noalias() += constant * u;
+
+			x(3 * loadedVert + 0) += constant * newV(0);
+			x(3 * loadedVert + 1) += constant * newV(1);
+			x(3 * loadedVert + 2) += constant * newV(2);
+
 			solution.StopCounter();
+
+			//(*config)["vertex"]["position"][0] = x(3 * loadedVert + 0);
+			//(*config)["vertex"]["position"][1] = x(3 * loadedVert + 1);
+			//(*config)["vertex"]["position"][2] = x(3 * loadedVert + 2);
 
 			//std::cout << "solved in " << solution.GetElapsedTime() << "; p:" << proj.GetElapsedTime() << '\n';
 
@@ -354,13 +442,9 @@ Vec Solver::Step()
 			for (auto bc : BCs)
 			{
 				int index = 3 * bc;
-				EffectiveMatrix.coeffRef(index + 0, index + 0) = 1.0;
-				EffectiveMatrix.coeffRef(index + 1, index + 1) = 1.0;
-				EffectiveMatrix.coeffRef(index + 2, index + 2) = 1.0;
-
-				RHS(index + 0) = 0.0;
-				RHS(index + 1) = 0.0;
-				RHS(index + 2) = 0.0;
+				S.coeffRef(index + 0, index + 0) = 0.0;
+				S.coeffRef(index + 1, index + 1) = 0.0;
+				S.coeffRef(index + 2, index + 2) = 0.0;
 			}
 
 			solver.compute(EffectiveMatrix);

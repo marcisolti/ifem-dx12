@@ -41,7 +41,7 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();
     
-    const wchar_t windowClassName[] = L"WindowClass";
+    const wchar_t windowClassName[] = L"femWindowClass";
     WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.style = CS_CLASSDC;
@@ -50,7 +50,7 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
     wc.lpszClassName = (LPCWSTR)&windowClassName;
 
     RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowExW(0,windowClassName, L"𝕴𝖓𝖙𝖊𝖗𝖆𝖈𝖙𝖎𝖛𝖊 𝐅𝐄𝐌 😁", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, Instance, NULL);
+    HWND hwnd = ::CreateWindowExW(0,windowClassName, L"✨ 𝕴𝖓𝖙𝖊𝖗𝖆𝖈𝖙𝖎𝖛𝖊 𝐅𝐄𝐌 😁", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, Instance, NULL);
 
     renderer.StartUp(hwnd, &config);
 
@@ -80,6 +80,18 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
 
     sim.StartUp(&renderer, &config);
 
+    {
+        char msgbuf[512];
+        sprintf(
+            msgbuf, 
+            "%0.3f, %0.3f, %0.3f\n",
+            (double)config["vertex"]["position"][0],
+            (double)config["vertex"]["position"][1],
+            (double)config["vertex"]["position"][2]
+        );
+        OutputDebugStringA((LPCSTR)msgbuf);
+    }
+
     renderer.Transform(
         0, 
         Float4x4::Rotation(
@@ -88,11 +100,9 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
         )
     );
 
-
-
     renderer.UploadTextures();
 
-    std::thread simThread{ Compute };
+    //std::thread simThread{ Compute };
 
     // Main loop
     MSG msg;
@@ -113,7 +123,17 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
             continue;
         }
 
+        {
+            //char msgbuf[512];
+            //sprintf(msgbuf, "%0.4f, %0.4f, %0.4f\n",
+            //    config["vertex"]["position"][0],
+            //    config["vertex"]["position"][1],
+            //    config["vertex"]["position"][2]
+            //);
+            //OutputDebugStringA((LPCSTR)msgbuf);
+        }
         app.Update();
+        sim.Step();
         sim.Update();
         renderer.Draw();
 

@@ -35,18 +35,38 @@ void App::Update()
         double solverTime = (*config)["solverTime"];
         ImGui::Text("Solution time: %.6f s", solverTime);
 
-        ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
+        static int node = 269;
+        ImGui::InputInt("vertex index", &node);
+        
+        float inputPos[3] = { 
+            (double)(*config)["vertex"]["position"][0],
+            (double)(*config)["vertex"]["position"][1],
+            (double)(*config)["vertex"]["position"][2]
+        };
+        
+        ImGui::DragFloat3("vertex position", inputPos, 0.0001);
 
-        static bool playing = true;
-        if (ImGui::Button("Play/Pause"))
-            playing = !playing;
+        (*config)["vertex"]["index"] = node;
+        (*config)["vertex"]["position"] = { 
+            (double)inputPos[0], 
+            (double)inputPos[1], 
+            (double)inputPos[2] 
+        };
 
-        static int multiplier = 1;
-        ImGui::InputInt("timestep size", &multiplier);
 
 
-        if (playing && (displayIndex + multiplier < stepNum - 1))
-            displayIndex += multiplier;
+        //ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
+
+        //static bool playing = true;
+        //if (ImGui::Button("Play/Pause"))
+        //    playing = !playing;
+
+        //static int multiplier = 1;
+        //ImGui::InputInt("timestep size", &multiplier);
+
+
+        //if (playing && (displayIndex + multiplier < stepNum - 1))
+        //    displayIndex += multiplier;
 
         for (const auto& [id, ent] : *entityDirectoryRef)
         {

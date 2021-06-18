@@ -12,11 +12,10 @@ void Simulator::StartUp(Renderer* renderer, json* config)
     renderer->AddDeformable(0, path + modelName + ".veg.obj");
     surfaceGeo = renderer->GetDeformableGeo();
 
-	Vec initPos = solver.StartUp(config);
+	currentPos = solver.StartUp(config);
 
 	numDOFs = 3 * surfaceGeo->vertices.size();
 	
-	posArray.push_back(initPos);
 	stepNum++;
 	(*config)["app"]["stepNum"] = stepNum;
 	(*config)["app"]["displayIndex"] = 0;
@@ -28,24 +27,18 @@ void Simulator::ShutDown()
 
 void Simulator::Step()
 {
-	Vec currPos = solver.Step();
-	posArray.push_back(currPos);
-	stepNum++;
-	(*config)["app"]["stepNum"] = stepNum;
+	currentPos = solver.Step();
 }
 
 void Simulator::Update()
 {
-	int index = (*config)["app"]["displayIndex"];
-	Vec currentPos = posArray[index];
 	for (size_t i = 0; i < numDOFs / 3; ++i)
 	{
-		Float3 newPos{
+		surfaceGeo->vertices[i].position = { 
 			(float)currentPos(3 * i + 0),
 			(float)currentPos(3 * i + 1),
-			(float)currentPos(3 * i + 2)
+			(float)currentPos(3 * i + 2) 
 		};
-		surfaceGeo->vertices[i].position = newPos;
 	}
 
 

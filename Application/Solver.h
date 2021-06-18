@@ -72,6 +72,8 @@ enum Integrator { qStatic, bwEuler, Newmark };
 
 class Solver
 {
+	const uint32_t loadedVert = 296;
+
 	json* config;
 
 	VolumetricMesh* mesh;
@@ -92,7 +94,6 @@ class Solver
 
 	// boundary conditions
 	std::vector<int> loadedVerts, BCs;
-	SpMat S;
 	
 	// matrices and vectors
 	SpMat Keff, M, spI;
