@@ -102,6 +102,7 @@
             ]
         },
         "magicConstant": 1e-06,
+        "interactiveVert": 296, 
         "material": {
             "E": 20.0,
             "alpha": 0.01,

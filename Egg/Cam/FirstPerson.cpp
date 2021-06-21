@@ -23,7 +23,7 @@ Cam::FirstPerson::FirstPerson()
 	viewMatrix = Float4x4::View(position, ahead, Float3::UnitY);
 	rayDirMatrix = (Float4x4::View(Float3::Zero, ahead, Float3::UnitY) * projMatrix).Invert();
 
-	speed = 5.0f;
+	speed = 2.0f;
 
 	lastMousePos = Int2::Zero;
 	mouseDelta = Float2::Zero;

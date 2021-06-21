@@ -4,22 +4,23 @@
 #include <ctime>
 #include <iomanip>
 
-
 Interpolator interpolator;
 
 Vec Solver::StartUp(json* config)
 {
 	this->config = config;
 
-
 	// read config
 	{
-		h			  = (*config)["sim"]["stepSize"];
-		h2 = h * h;
-		numSubsteps   = (*config)["sim"]["numSubsteps"];
-		alpha		  = (*config)["sim"]["material"]["alpha"];
-		beta		  = (*config)["sim"]["material"]["beta"];
-		magicConstant = (*config)["sim"]["magicConstant"];
+		h				= (*config)["sim"]["stepSize"];
+		h2				= h * h;
+		numSubsteps		= (*config)["sim"]["numSubsteps"];
+		alpha			= (*config)["sim"]["material"]["alpha"];
+		beta			= (*config)["sim"]["material"]["beta"];
+		magicConstant	= (*config)["sim"]["magicConstant"];
+		
+		interactiveVert	= (*config)["sim"]["interactiveVert"];
+		interactiveLoad << 0, 0, 0;
 		
 		solver.setMaxIterations((*config)["sim"]["cgIterations"]);
 
@@ -76,7 +77,6 @@ Vec Solver::StartUp(json* config)
 				std::exit(420);
 		}
 
-
 		for(int i = 0; i < (*config)["sim"]["BCs"].size(); ++i)
 			BCs.push_back((*config)["sim"]["BCs"][i]);
 
@@ -92,6 +92,8 @@ Vec Solver::StartUp(json* config)
 			integrator = Newmark;
 		else
 			std::exit(420);
+
+		
 	}
 
 	numVertices = mesh->getNumVertices();
@@ -180,8 +182,6 @@ Vec Solver::StartUp(json* config)
 	{
 		std::srand(std::time(nullptr)); // use current time as seed for random generator
 
-
-
 		std::string initConfig = (*config)["sim"]["initConfig"];
 		for (size_t i = 0; i < mesh->getNumVertices(); ++i)
 		{
@@ -250,13 +250,18 @@ Vec Solver::Step()
 	T += h;
 
 	double loadValue = interpolator.get(T);
+	fExt.setZero();
+	
 	for (auto index : loadedVerts)
 	{
-		fExt(index)  = loadValue;
+		fExt(index) += loadValue;
 	}
 
-	//std::cout << "T:" << T << "; fExt: " << loadValue << "; ";
+	fExt(3 * interactiveVert + 0) += interactiveLoad(0);
+	fExt(3 * interactiveVert + 1) += interactiveLoad(1);
+	fExt(3 * interactiveVert + 2) += interactiveLoad(2);
 
+	
 
 	// clear Keff to 0.0
 	for (int k = 0; k < Keff.outerSize(); ++k)
@@ -303,7 +308,6 @@ Vec Solver::Step()
 		//	<< "; F:" << FTime 
 		//	<< "; P:" << PTime 
 		//	<< "; dP:" << dPdxTime << "  ";
-
 		//std::cout << " K:" << jacobian.GetElapsedTime() << "; F:" << FTime << "; P:" << PTime << "; dPdx:" << dPdxTime << ' ';
 
 		switch (integrator)
@@ -425,7 +429,6 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 {
 	const int* indices = &(indexArray[4 * i]);
 
-	//PerformanceCounter Fcounter;
 	Mat3 F;
 	{
 		Vec3 v0, v1, v2, v3;
@@ -447,10 +450,7 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 		const Mat3 DmInv = DmInvs[i];
 		F = Ds * DmInv;
 	}
-	//Fcounter.StopCounter();
-	//FTime += Fcounter.GetElapsedTime();
-	
-	//PerformanceCounter Pcounter;
+
 	Mat3 P;
 	// ARAP
 	Mat3 U, VT, R;
@@ -494,7 +494,6 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 	*/
 
 
-	//const double tetVol = tetVols[i];
 	const Mat9x12 dFdx = dFdxs[i];
 	const Mat12x9 minusTetVolxdFdxT = -tetVols[i] * dFdx.transpose();
 	// calculate forces
@@ -505,11 +504,7 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 
 		fIntArray[i] = fEl;
 	}
-	//Pcounter.StopCounter();
-	//PTime += Pcounter.GetElapsedTime();
-	// get jacobian
 
-	
 	Mat9 dPdF;
 	//ARAP
 	{
@@ -521,9 +516,6 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 		double lambda[3];
 		for (int i = 0; i < 3; ++i)
 			(I[i] >= 2.0) ? lambda[i] = 2.0 / I[i] : lambda[i] = 1.0;
-			//(true) ? lambda[i] = 2.0 / I[i] : lambda[i] = 1.0;
-
-		//PerformanceCounter dPcounter;
 
 		dPdF.setIdentity();
 		for (int el = 0; el < 3; ++el)
@@ -705,4 +697,31 @@ Mat9x12 Solver::ComputedFdx(Mat3 DmInv)
 	dFdx(8, 11) = u;
 
 	return dFdx;
+}
+
+void Solver::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (uMsg == WM_KEYDOWN)
+	{
+		if (wParam == VK_UP)
+		{
+			interactiveLoad = Vec3(0, -2000000, 0);
+		}
+		else if (wParam == VK_DOWN)
+		{
+			interactiveLoad = Vec3(0, 2000000, 0);
+		}
+		else if (wParam == VK_LEFT)
+		{
+			interactiveLoad = Vec3(0,0,2000000);
+		}
+		else if (wParam == VK_RIGHT)
+		{
+			interactiveLoad = Vec3(0,0,-2000000);
+		}
+	}
+	if (uMsg == WM_KEYUP) 
+	{
+		interactiveLoad = Vec3(0, 0, 0);
+	}
 }

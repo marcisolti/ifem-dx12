@@ -1,5 +1,6 @@
 #pragma once
 #define NOMINMAX
+
 #include "Renderer.h"
 
 #include <string>
@@ -26,7 +27,8 @@ public:
 	void StartUp(Renderer* renderer, json* config);
 	void ShutDown();
 
-	void Step();
 	void Update();
+
+	void ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
 

@@ -76,7 +76,10 @@ class Solver
 
 	VolumetricMesh* mesh;
 	uint32_t numDOFs, numElements, numVertices;
-	
+
+	int interactiveVert;
+	Vec3 interactiveLoad;
+
 	Integrator integrator;
 	EnergyFunction* energyFunction;
 
@@ -123,6 +126,7 @@ public:
 
 	Vec Step();
 
+	void ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
 	void ComputeElementJacobianAndHessian(int i);
@@ -133,5 +137,6 @@ private:
 
 	Mat3	ComputeDm(int i);
 	Mat9x12 ComputedFdx(Mat3 DmInv);
+
 };
 

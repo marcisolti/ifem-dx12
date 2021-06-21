@@ -18,26 +18,16 @@ void Simulator::StartUp(Renderer* renderer, json* config)
 	
 	posArray.push_back(initPos);
 	stepNum++;
-	(*config)["app"]["stepNum"] = stepNum;
-	(*config)["app"]["displayIndex"] = 0;
 }
 
 void Simulator::ShutDown()
 {
 }
 
-void Simulator::Step()
-{
-	Vec currPos = solver.Step();
-	posArray.push_back(currPos);
-	stepNum++;
-	(*config)["app"]["stepNum"] = stepNum;
-}
-
 void Simulator::Update()
 {
-	int index = (*config)["app"]["displayIndex"];
-	Vec currentPos = posArray[index];
+	Vec currentPos = solver.Step();
+	
 	for (size_t i = 0; i < numDOFs / 3; ++i)
 	{
 		Float3 newPos{
@@ -85,4 +75,9 @@ void Simulator::Update()
 		reinterpret_cast<const void*>(&(surfaceGeo->vertices[0])),
 		surfaceGeo->vertices.size() * sizeof(PNT_Vertex)
 	);
+}
+
+void Simulator::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
+{
+	solver.ProcessMessage(hWnd, uMsg, wParam, lParam);
 }

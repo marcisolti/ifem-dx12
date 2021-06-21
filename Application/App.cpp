@@ -1,5 +1,6 @@
 #include "App.h"
 
+
 App::App() {}
 App::~App() {}
 
@@ -17,8 +18,8 @@ void App::Update()
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    int stepNum = (*config)["app"]["stepNum"];
-    int displayIndex = (*config)["app"]["displayIndex"];
+    //int stepNum = (*config)["app"]["stepNum"];
+    //int displayIndex = (*config)["app"]["displayIndex"];
 
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (!show_demo_window)
@@ -33,20 +34,24 @@ void App::Update()
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
         double solverTime = (*config)["solverTime"];
-        ImGui::Text("Solution time: %.6f s", solverTime);
+        ImGui::Text("%.1f fps; solution time: %.6f s", ImGui::GetIO().Framerate, solverTime);
 
-        ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
+        //ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
 
-        static bool playing = true;
-        if (ImGui::Button("Play/Pause"))
-            playing = !playing;
+        //static bool playing = true;
+        //if (ImGui::Button("Play/Pause"))
+        //    playing = !playing;
 
-        static int multiplier = 1;
-        ImGui::InputInt("timestep size", &multiplier);
+        //static int multiplier = 1;
+        //ImGui::InputInt("timestep size", &multiplier);
 
 
-        if (playing && (displayIndex + multiplier < stepNum - 1))
-            displayIndex += multiplier;
+        //if (playing && (displayIndex + multiplier < stepNum - 1))
+        //    displayIndex += multiplier;
+
+        //(*config)["app"]["displayIndex"] = displayIndex;
+
+        ImGui::Text("Edit scene:");
 
         for (const auto& [id, ent] : *entityDirectoryRef)
         {
@@ -100,10 +105,6 @@ void App::Update()
             }
         }
         
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-
         if (ImGui::TreeNode("Demo stuff"))
         {
 
@@ -134,7 +135,6 @@ void App::Update()
         ImGui::End();
     }
 
-    (*config)["app"]["displayIndex"] = displayIndex;
 
     // Rendering
     ImGui::Render();

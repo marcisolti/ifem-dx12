@@ -18,14 +18,6 @@ using json = nlohmann::json;
 #include <iostream>
 #include <ctime>
 
-void Compute()
-{
-    while(1)
-    {
-        sim.Step();
-    }
-}
-
 using namespace Egg::Math;
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -50,7 +42,17 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
     wc.lpszClassName = (LPCWSTR)&windowClassName;
 
     RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowExW(0,windowClassName, L"𝕴𝖓𝖙𝖊𝖗𝖆𝖈𝖙𝖎𝖛𝖊 𝐅𝐄𝐌 😁", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, Instance, NULL);
+    HWND hwnd = ::CreateWindowExW(
+        0,
+        windowClassName, 
+        L"𝕴𝖓𝖙𝖊𝖗𝖆𝖈𝖙𝖎𝖛𝖊 𝐅𝐄𝐌 😁", 
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720,
+        NULL, 
+        NULL, 
+        Instance, 
+        NULL
+    );
 
     renderer.StartUp(hwnd, &config);
 
@@ -91,8 +93,6 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
 
 
     renderer.UploadTextures();
-
-    std::thread simThread{ Compute };
 
     // Main loop
     MSG msg;
@@ -135,6 +135,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
 
+    sim.ProcessMessage(hWnd, msg, wParam, lParam);
     renderer.ProcessMessage(hWnd, msg, wParam, lParam);
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
