@@ -1,0 +1,118 @@
+{
+    "lights": [
+        {
+            "color": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "pos": [
+                10.0,
+                10.0,
+                15.0
+            ]
+        },
+        {
+            "color": [
+                0.8,
+                0.8,
+                1.5
+            ],
+            "pos": [
+                -6.0,
+                8.0,
+                -19.0
+            ]
+        }
+    ],
+    "scene": [
+        {
+            "mesh": "bunny.obj",
+            "texture": "floor.png",
+            "transform": [
+                6.0,
+                0.0,
+                -5.0
+            ]
+        },
+        {
+            "mesh": "sphere.fbx",
+            "texture": "checkered.png",
+            "transform": [
+                -6.0,
+                0.0,
+                5.0
+            ]
+        }
+    ],
+    "sim": {
+        "BCs": [
+            1,
+            3,
+            6,
+            8,
+            11,
+            12,
+            13,
+            15,
+            17,
+            18,
+            26,
+            29,
+            42,
+            45,
+            47,
+            49,
+            58,
+            59,
+            60,
+            247,
+            248,
+            256,
+            265
+        ],
+        "cgIterations": 200,
+        "initConfig": "r",
+        "integrator": "qStatic",
+        "loadCases": {
+            "loadSteps": [
+                {
+                    "f": 0.0,
+                    "t": 0.0
+                },
+                {
+                    "f": -5000000.0,
+                    "t": 0.2
+                },
+                {
+                    "f": -5000000.0,
+                    "t": 0.5
+                },
+                {
+                    "f": 0.0,
+                    "t": 1.0
+                },
+                {
+                    "f": 0.0,
+                    "t": 100.0
+                }
+            ],
+            "nodes": [
+                889
+            ]
+        },
+        "magicConstant": 1e-06,
+        "interactiveVert": 296, 
+        "material": {
+            "E": 20.0,
+            "alpha": 0.01,
+            "beta": 5.0,
+            "energyFunction": "ARAP",
+            "nu": 0.35,
+            "rho": 1000.0
+        },
+        "model": "turtle",
+        "numSubsteps": 1,
+        "stepSize": 0.005
+    }
+}

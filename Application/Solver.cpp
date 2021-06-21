@@ -19,8 +19,9 @@ Vec Solver::StartUp(json* config)
 		beta			= (*config)["sim"]["material"]["beta"];
 		magicConstant	= (*config)["sim"]["magicConstant"];
 		
-		interactiveVert	= (*config)["sim"]["interactiveVert"];
-		interactiveLoad << 0, 0, 0;
+		interactiveVert = (*config)["sim"]["interactiveVert"];
+		interactiveLoad	= (*config)["sim"]["interactiveLoad"];
+		interactiveVector << 0, 0, 0;
 		
 		solver.setMaxIterations((*config)["sim"]["cgIterations"]);
 
@@ -257,20 +258,20 @@ Vec Solver::Step()
 		fExt(index) += loadValue;
 	}
 
-	fExt(3 * interactiveVert + 0) += interactiveLoad(0);
-	fExt(3 * interactiveVert + 1) += interactiveLoad(1);
-	fExt(3 * interactiveVert + 2) += interactiveLoad(2);
+	fExt(3 * interactiveVert + 0) += interactiveVector(0);
+	fExt(3 * interactiveVert + 1) += interactiveVector(1);
+	fExt(3 * interactiveVert + 2) += interactiveVector(2);
 
 	
-
-	// clear Keff to 0.0
-	for (int k = 0; k < Keff.outerSize(); ++k)
-		for (Eigen::SparseMatrix<double>::InnerIterator it(Keff, k); it; ++it)
-			it.valueRef() = 0.0;
-
-	fInt.setZero(numDOFs);
 	for (;;)
 	{
+		// clear Keff to 0.0
+		for (int k = 0; k < Keff.outerSize(); ++k)
+			for (Eigen::SparseMatrix<double>::InnerIterator it(Keff, k); it; ++it)
+				it.valueRef() = 0.0;
+
+		fInt.setZero(numDOFs);
+
 		// build Keff
 		FTime = PTime = dPdxTime = 0.0;
 		PerformanceCounter jacobian;
@@ -516,6 +517,7 @@ void Solver::ComputeElementJacobianAndHessian(int i)
 		double lambda[3];
 		for (int i = 0; i < 3; ++i)
 			(I[i] >= 2.0) ? lambda[i] = 2.0 / I[i] : lambda[i] = 1.0;
+			//(true) ? lambda[i] = 2.0 / I[i] : lambda[i] = 1.0;
 
 		dPdF.setIdentity();
 		for (int el = 0; el < 3; ++el)
@@ -705,23 +707,23 @@ void Solver::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		if (wParam == VK_UP)
 		{
-			interactiveLoad = Vec3(0, -2000000, 0);
+			interactiveVector = Vec3(0, -interactiveLoad, 0);
 		}
 		else if (wParam == VK_DOWN)
 		{
-			interactiveLoad = Vec3(0, 2000000, 0);
+			interactiveVector = Vec3(0, interactiveLoad, 0);
 		}
 		else if (wParam == VK_LEFT)
 		{
-			interactiveLoad = Vec3(0,0,2000000);
+			interactiveVector = Vec3(0,0,interactiveLoad);
 		}
 		else if (wParam == VK_RIGHT)
 		{
-			interactiveLoad = Vec3(0,0,-2000000);
+			interactiveVector = Vec3(0,0,-interactiveLoad);
 		}
 	}
 	if (uMsg == WM_KEYUP) 
 	{
-		interactiveLoad = Vec3(0, 0, 0);
+		interactiveVector = Vec3(0, 0, 0);
 	}
 }
