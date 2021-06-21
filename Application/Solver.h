@@ -78,7 +78,8 @@ class Solver
 	uint32_t numDOFs, numElements, numVertices;
 
 	int interactiveVert;
-	Vec3 interactiveLoad;
+	double interactiveLoad;
+	Vec3 interactiveVector;
 
 	Integrator integrator;
 	EnergyFunction* energyFunction;
