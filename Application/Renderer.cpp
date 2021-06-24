@@ -5,9 +5,9 @@ FrameContext frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 Renderer::Renderer() {}
 Renderer::~Renderer(){}
 
-void Renderer::StartUp(HWND hwnd, json* config)
+void Renderer::StartUp(HWND hwnd, Scene* scene)
 {
-    this->config = config;
+    this->scene = scene;
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -55,6 +55,79 @@ void Renderer::StartUp(HWND hwnd, json* config)
         pso = new GG::GPSO(device, rootSig.Get(), vs.Get(), ps.Get());        
     }
 
+    // load a scene
+    {
+        uint32_t sizeInBytes;
+        uint32_t indexDataSizeInBytes;
+        uint32_t stride;
+        void* indexData;
+        void* data;
+        DXGI_FORMAT indexFormat;
+        {
+            std::string path = "../Media/sponza.obj";
+
+            Assimp::Importer importer;
+
+            const aiScene* assimpScene = importer.ReadFile(path, 0);
+
+            ASSERT(assimpScene != nullptr, "Failed to load obj file: '%s'. Assimp error message: '%s'", path.c_str(), importer.GetErrorString());
+
+            ASSERT(assimpScene->HasMeshes(), "Obj file: '%s' does not contain a mesh.", path.c_str());
+
+            for (int i = 0; i < assimpScene->mNumMeshes; ++i)
+            {
+                // for this example we only load the first mesh
+                const aiMesh* assimpMesh = assimpScene->mMeshes[i];
+
+                Mesh mesh;
+                mesh.vertices.reserve(assimpMesh->mNumVertices);
+                mesh.indices.reserve(assimpMesh->mNumFaces);
+
+                Vertex v;
+
+                for (unsigned int i = 0; i < assimpMesh->mNumVertices; ++i)
+                {
+                    v.position.x = assimpMesh->mVertices[i].x;
+                    v.position.y = assimpMesh->mVertices[i].y;
+                    v.position.z = assimpMesh->mVertices[i].z;
+
+                    v.normal.x = assimpMesh->mNormals[i].x;
+                    v.normal.y = assimpMesh->mNormals[i].y;
+                    v.normal.z = assimpMesh->mNormals[i].z;
+
+                    v.uv.x = assimpMesh->mTextureCoords[0][i].x;
+                    v.uv.y = assimpMesh->mTextureCoords[0][i].y;
+
+                    mesh.vertices.emplace_back(v);
+                }
+
+                for (unsigned int i = 0; i < assimpMesh->mNumFaces; ++i)
+                {
+                    aiFace face = assimpMesh->mFaces[i];
+                    mesh.indices.emplace_back(face.mIndices[0]);
+                    mesh.indices.emplace_back(face.mIndices[1]);
+                    mesh.indices.emplace_back(face.mIndices[2]);
+                }
+
+                scene->meshes.push_back(mesh);
+                
+//              assimpScene->mMaterials[1]->
+
+                /*
+                aiString texturePath;
+        		scene->mMaterials[scene->mMeshes[i]->mMaterialIndex]->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &texturePath);
+                */
+
+                //sizeInBytes = (vertices.size() * sizeof(PNT_Vertex));
+                //indexDataSizeInBytes = (indices.size() * 4);
+                //stride = sizeof(PNT_Vertex);
+                //indexData = &(indices.at(0));
+                //data = &(vertices.at(0));
+                //indexFormat = DXGI_FORMAT_R32_UINT;
+            }
+        }
+    }
+
 }
 
 void Renderer::UploadTextures()
@@ -66,8 +139,10 @@ void Renderer::UploadTextures()
     DX_API("Failed to reset command list (UploadResources)")
         commandList->Reset(frameCtx->commandAllocator, nullptr);
 
-    for (const auto& [id, ent] : entityDirectory)
-        ent->texture->UploadResources(commandList);
+    for (const auto& [id, ent] : entityDirectory) {
+        ent->albedo->UploadResources(commandList);
+        ent->normal->UploadResources(commandList);
+    }
 
     DX_API("Failed to close command list (UploadResources)")
         commandList->Close();
@@ -97,6 +172,7 @@ void Renderer::Draw()
         perFrameCb->eyePos.xyz = camera->GetEyePosition();
         perFrameCb->eyePos.w = 1.0f;
 
+        /*
         for (int i = 0; i < (*config)["lights"].size(); ++i)
         {
 
@@ -115,7 +191,8 @@ void Renderer::Draw()
         }
 
         perFrameCb->nrLights = (*config)["lights"].size();
-        
+        */
+
         perFrameCb.Upload();
         
         for (const auto& [id, ent] : entityDirectory)
@@ -171,7 +248,7 @@ void Renderer::Draw()
             for (const auto& [id,ent] : entityDirectory)
             {
                 commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress(id));
-                commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(id));
+                commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(2*id));
 
                 ent->geometry->Draw(commandList);
             }
@@ -227,22 +304,19 @@ void Renderer::ShutDown(HWND hwnd)
     //::UnregisterClass(wc.lpszClassName, wc.hInstance);
 }
 
-void Renderer::AddEntity(uint32_t id, const std::string& meshPath, const std::string& texPath)
-{
-    Entity* e = new Entity{ id, device, heap, meshPath, texPath };
+void Renderer::AddEntity(
+    uint32_t id, 
+    const std::string& meshPath, 
+    const std::string& albedoPath,
+    const std::string& normalPath
+){
+    Entity* e = new Entity{ id, device, heap, meshPath, albedoPath, normalPath };
     entityDirectory.insert({ id, e });
 }
 
 void Renderer::Transform(uint32_t id, const Float4x4& transform)
 {
     entityDirectory[id]->transform = transform;
-}
-
-void Renderer::AddDeformable(uint32_t id, const std::string& meshPath)
-{
-    GG::Geometry* geo = ObjLoader::parseFile(device, meshPath);
-    Entity* e = new Entity{ id, device, heap, geo, std::string{"bunnybase.png"} };
-    entityDirectory.insert({ id, e });
 }
 
 bool Renderer::CreateDeviceD3D(HWND hWnd)

@@ -4,22 +4,17 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="App.cpp" />
-    <ClCompile Include="Simulator.cpp" />
-    <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="App.h" />
-    <ClInclude Include="ObjLoader.h" />
-    <ClInclude Include="Simulator.h" />
-    <ClInclude Include="Solver.h" />
-    <ClInclude Include="EnergyFunction.h" />
     <ClInclude Include="PerformanceCounter.h" />
     <ClInclude Include="..\GG\ConstantBuffer.hpp" />
     <ClInclude Include="..\GG\DescriptorHeap.h" />
     <ClInclude Include="..\GG\Geometry.h" />
     <ClInclude Include="..\GG\GPSO.h" />
     <ClInclude Include="..\GG\Tex2D.h" />
+    <ClInclude Include="Scene.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="config">

@@ -4,11 +4,10 @@
 App::App() {}
 App::~App() {}
 
-void App::StartUp(Renderer* renderer, json* config)
+void App::StartUp(Renderer* renderer, Scene* scene)
 {
-    this->config = config;
+    this->scene = scene;
     entityDirectoryRef = &(renderer->entityDirectory);
-
 }
 
 void App::Update()
@@ -33,8 +32,7 @@ void App::Update()
 
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-        double solverTime = (*config)["solverTime"];
-        ImGui::Text("%.1f fps; solution time: %.6f s", ImGui::GetIO().Framerate, solverTime);
+        ImGui::Text("%.1f fps;", ImGui::GetIO().Framerate);
 
         //ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
 
@@ -69,6 +67,7 @@ void App::Update()
 
         ImGui::Separator();
 
+        /*
         for (int i = 0; i < (*config)["lights"].size(); ++i)
         {
             char buffer[128];
@@ -105,6 +104,14 @@ void App::Update()
             }
         }
         
+        if (ImGui::Button("deserialize"))
+        {
+            // write prettified JSON to another file
+            std::ofstream o("pretty.json");
+            o << std::setw(4) << (*config) << std::endl;
+
+        }
+        */
         if (ImGui::TreeNode("Demo stuff"))
         {
 

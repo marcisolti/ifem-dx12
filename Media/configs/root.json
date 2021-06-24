@@ -28,7 +28,8 @@
   "scene": [
     {
       "mesh": "bunny.obj",
-      "texture": "floor.png",
+      "albedo": "floor.png",
+      "normal": "rusted_normal.jpg",
       "transform": [
         6.0,
         0.0,
@@ -37,7 +38,8 @@
     },
     {
       "mesh": "sphere.fbx",
-      "texture": "checkered.png",
+      "albedo": "rusty.png",
+      "normal": "rusted_normal.jpg",
       "transform": [
         -6.0,
         0.0,

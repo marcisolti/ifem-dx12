@@ -4,9 +4,9 @@
 #include <imgui/imgui_impl_win32.h>
 #include <imgui/imgui_impl_dx12.h>
 
-#define DX12_ENABLE_DEBUG_LAYER
-#include <dxgidebug.h>
-#pragma comment(lib, "dxguid.lib")
+//#define DX12_ENABLE_DEBUG_LAYER
+//#include <dxgidebug.h>
+//#pragma comment(lib, "dxguid.lib")
 
 #include <Egg/Common.h>
 #include <Egg/Shader.h>
@@ -18,8 +18,6 @@
 #include <GG/GPSO.h>
 #include <GG/Tex2D.h>
 
-#include "ObjLoader.h"
-
 #include <iostream>
 #include <chrono>
 #include <map>
@@ -27,12 +25,9 @@
 
 #include <thread>
 
-#include "Common/nlohmann/json.hpp"
-using json = nlohmann::json;
+#include "Scene.h"
 
 constexpr uint32_t                          NUM_FRAMES_IN_FLIGHT = 3;
-
-LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 using namespace Egg::Math;
 
@@ -69,24 +64,29 @@ struct FrameContext
 
 struct Entity
 {
-	GG::Geometry* geometry;
-	GG::Tex2D*	  texture;
-	Float4x4 transform;
+	GG::Geometry*	geometry;
+	GG::Tex2D*		albedo;
+	GG::Tex2D*		normal;
+	Float4x4		transform;
 
-	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, const std::string& meshPath, const std::string& texturePath)
+	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, const std::string& meshPath, const std::string& albedoPath, const std::string& normalPath)
 	{
 		geometry = new GG::Geometry(device, meshPath);
-		texture = new GG::Tex2D(device, heap, texturePath);
-		texture->CreateSrv(device, heap, id);
+		albedo = new GG::Tex2D(device, heap, albedoPath);
+		normal = new GG::Tex2D(device, heap, normalPath);
+		albedo->CreateSrv(device, heap, 2*id+0);
+		normal->CreateSrv(device, heap, 2*id+1);
 		
 		transform = Float4x4::Identity;
 	}
 	~Entity()
 	{
 		delete geometry;
-		delete texture;
+		delete albedo;
+		delete normal;
 	}
 
+	/*
 	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, GG::Geometry* geo, const std::string& texturePath)
 	{
 		geometry = geo;
@@ -95,6 +95,7 @@ struct Entity
 
 		transform = Float4x4::Identity;
 	}
+	*/
 };
 
 class Renderer
@@ -149,7 +150,7 @@ class Renderer
 
 	float dt;
 
-	json* config;
+	Scene* scene;
 
 public:
 	std::map<uint32_t, Entity*> entityDirectory;
@@ -157,16 +158,14 @@ public:
 	Renderer();
 	~Renderer();
 
-	void StartUp(HWND hwnd, json* config);
+	void StartUp(HWND hwnd, Scene* scene);
 	void ShutDown(HWND hwnd);
 
 	void Draw();
 	void ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void UploadTextures();
 
-	void AddEntity(uint32_t id, const std::string& meshPath, const std::string& texPath);
-	void AddDeformable(uint32_t id, const std::string& meshPath);
-	GG::Geometry* GetDeformableGeo() { return entityDirectory[0]->geometry; }
+	void AddEntity(uint32_t id, const std::string& meshPath, const std::string& albedoPath, const std::string& normalPath);
 
 	void Transform(uint32_t id, const Float4x4& transform);
 

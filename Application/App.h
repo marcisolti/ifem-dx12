@@ -5,10 +5,11 @@
 #include <imgui/imgui_impl_dx12.h>
 
 #include <vector>
+#include <iomanip>
+#include <fstream>
 #include "Renderer.h"
 
-#include "Common/nlohmann/json.hpp"
-using json = nlohmann::json;
+#include "Scene.h"
 
 class App
 {
@@ -17,13 +18,13 @@ class App
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	std::map<uint32_t, Entity*>* entityDirectoryRef;
 
-	json* config;
+	Scene* scene;
 
 public:
 	App();
 	~App();
 
-	void StartUp(Renderer* renderer, json* config);
+	void StartUp(Renderer* renderer, Scene* scene);
 	void Update();
 
 };

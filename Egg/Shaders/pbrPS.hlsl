@@ -10,7 +10,7 @@
 #include "RootSignatures.hlsli"
 
 Texture2D baseTxt : register(t0);
-//Texture2D shinyTxt : register(t1);
+Texture2D normalTxt : register(t1);
 //TextureCube env : register(t2);
 SamplerState sampl : register(s0);
 
@@ -20,10 +20,11 @@ SamplerState sampl : register(s0);
 float4 main(VSOutput input) : SV_Target
 {
 	float3 baseColorMap = baseTxt.Sample(sampl, -input.texCoord);
-	//float  shinyMap = shinyTxt.Sample(sampl, -input.texCoord).r;
-	float shinyMap = 0.6;
+	float3 normalMap = normalTxt.Sample(sampl, -input.texCoord).rgb;
 	
-	float3 N = normalize(input.normal);
+	float shininess = normalMap.r * normalMap.b;
+
+	float3 N = normalize(input.normal + normalMap);
 	float3 V = normalize(eyePos - input.worldPosition);
 
 	float3 reflDir = reflect(normalize(input.worldPosition.xyz - eyePos.xyz), normalize(input.normal));
@@ -31,7 +32,7 @@ float4 main(VSOutput input) : SV_Target
 
 	float metalness = 1.f;
 
-	float roughness = pow(1.0-shinyMap, 2);
+	float roughness = pow(1.0 - shininess, 2);
 	float linearRoughness = roughness + 1e-5f;
 	float f0 = 0.3f;
 	float f90 = 1.f;

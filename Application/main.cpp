@@ -4,14 +4,6 @@ App app;
 #include "Renderer.h"
 Renderer renderer;
 
-#include "Simulator.h"
-Simulator sim;
-
-std::vector<double> results;
-
-#include "Common/nlohmann/json.hpp"
-using json = nlohmann::json;
-
 #include <fstream>
 #include <iomanip>
 #include <cstdlib>
@@ -22,14 +14,10 @@ using namespace Egg::Math;
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+Scene scene;
+
 int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, int CmdShow)
 {
-    json config;
-        
-    const std::string configPath{ "../Media/configs/root.json" };
-    std::ifstream i(configPath);
-    i >> config;
-    
     // Create win32 window
     ImGui_ImplWin32_EnableDpiAwareness();
     
@@ -54,41 +42,30 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
         NULL
     );
 
-    renderer.StartUp(hwnd, &config);
-
-    config["solverTime"] = 0.0;
-    app.StartUp(&renderer, &config);
+    renderer.StartUp(hwnd, &scene);
+    app.StartUp(&renderer, &scene);
 
     // parse for scene
-    for (int i = 0; i < config["scene"].size(); ++i)
-    {
-        const uint32_t id = i + 1;
-        renderer.AddEntity(
-            id, 
-            config["scene"][i]["mesh"], 
-            config["scene"][i]["texture"]
-        );
-        
-        renderer.Transform(
-            id, 
-            Float4x4::Translation({
-                config["scene"][i]["transform"][0],
-                config["scene"][i]["transform"][1],
-                config["scene"][i]["transform"][2] 
-            })
-        );
+    //for (int i = 0; i < config["scene"].size(); ++i)
+    //{
+    //    const uint32_t id = i + 1;
+    //    renderer.AddEntity(
+    //        id, 
+    //        config["scene"][i]["mesh"], 
+    //        config["scene"][i]["albedo"],
+    //        config["scene"][i]["normal"]
+    //    );
+    //    
+    //    renderer.Transform(
+    //        id, 
+    //        Float4x4::Translation({
+    //            config["scene"][i]["transform"][0],
+    //            config["scene"][i]["transform"][1],
+    //            config["scene"][i]["transform"][2] 
+    //        })
+    //    );
 
-    }
-
-    sim.StartUp(&renderer, &config);
-
-    renderer.Transform(
-        0, 
-        Float4x4::Rotation(
-            { 0, 1, 0 }, 
-            3.14156
-        )
-    );
+    //}
 
 
 
@@ -114,7 +91,6 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
         }
 
         app.Update();
-        sim.Update();
         renderer.Draw();
 
     }
@@ -135,7 +111,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
 
-    sim.ProcessMessage(hWnd, msg, wParam, lParam);
     renderer.ProcessMessage(hWnd, msg, wParam, lParam);
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
