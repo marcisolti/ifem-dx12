@@ -88,6 +88,8 @@
     <None Include="..\Media\configs\bwEuler-ARAP.json" />
     <None Include="..\Media\configs\bwEuler-SNH.json" />
     <None Include="..\Media\configs\dragon-pancake.json" />
+    <None Include="..\Media\configs\exam\nice_qStatic.json" />
+    <None Include="..\Media\configs\exam\nice_bwEuler.json" />
     <None Include="..\Media\configs\turtle-qStatic-ARAP.json" />
     <None Include="..\Media\configs\root.json" />
   </ItemGroup>

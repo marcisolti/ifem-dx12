@@ -48,5 +48,11 @@
     <None Include="..\Media\configs\dragon-pancake.json">
       <Filter>config</Filter>
     </None>
+    <None Include="..\Media\configs\exam\nice_qStatic.json">
+      <Filter>config</Filter>
+    </None>
+    <None Include="..\Media\configs\exam\nice_bwEuler.json">
+      <Filter>config</Filter>
+    </None>
   </ItemGroup>
 </Project>
