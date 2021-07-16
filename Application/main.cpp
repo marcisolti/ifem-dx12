@@ -69,7 +69,7 @@ int WINAPI wWinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PWSTR CmdLine, i
 
 
 
-    renderer.UploadTextures();
+    //renderer.UploadTextures();
 
     // Main loop
     MSG msg;

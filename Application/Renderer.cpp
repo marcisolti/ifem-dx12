@@ -109,21 +109,29 @@ void Renderer::StartUp(HWND hwnd, Scene* scene)
                     mesh.indices.emplace_back(face.mIndices[2]);
                 }
 
+                aiString texturePath;
+                assimpScene->mMaterials[assimpScene->mMeshes[i]->mMaterialIndex]->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &texturePath);
+                mesh.materials.push_back({ ALBEDO, {texturePath.C_Str()} });
+
+                sizeInBytes = (mesh.vertices.size() * sizeof(Vertex));
+                indexDataSizeInBytes = (mesh.indices.size() * 4);
+                stride = sizeof(Vertex);
+                indexData = &(mesh.indices.at(0));
+                data = &(mesh.vertices.at(0));
+                indexFormat = DXGI_FORMAT_R32_UINT;
+                
+                mesh.dxGeometry = new GG::Geometry{
+                    device,
+                    data,
+                    sizeInBytes,
+                    stride,
+                    indexData,
+                    indexDataSizeInBytes,
+                    indexFormat
+                };
+
                 scene->meshes.push_back(mesh);
                 
-//              assimpScene->mMaterials[1]->
-
-                /*
-                aiString texturePath;
-        		scene->mMaterials[scene->mMeshes[i]->mMaterialIndex]->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &texturePath);
-                */
-
-                //sizeInBytes = (vertices.size() * sizeof(PNT_Vertex));
-                //indexDataSizeInBytes = (indices.size() * 4);
-                //stride = sizeof(PNT_Vertex);
-                //indexData = &(indices.at(0));
-                //data = &(vertices.at(0));
-                //indexFormat = DXGI_FORMAT_R32_UINT;
             }
         }
     }
@@ -139,10 +147,10 @@ void Renderer::UploadTextures()
     DX_API("Failed to reset command list (UploadResources)")
         commandList->Reset(frameCtx->commandAllocator, nullptr);
 
-    for (const auto& [id, ent] : entityDirectory) {
-        ent->albedo->UploadResources(commandList);
-        ent->normal->UploadResources(commandList);
-    }
+    //for (const auto& [id, ent] : entityDirectory) {
+    //    ent->albedo->UploadResources(commandList);
+    //    ent->normal->UploadResources(commandList);
+    //}
 
     DX_API("Failed to close command list (UploadResources)")
         commandList->Close();
@@ -195,11 +203,11 @@ void Renderer::Draw()
 
         perFrameCb.Upload();
         
-        for (const auto& [id, ent] : entityDirectory)
-        {
-            perObjectCb->data[id].modelTransform = ent->transform;
-            perObjectCb->data[id].modelTransformInverse = ent->transform.Invert();
-        }
+        //for (const auto& [id, ent] : entityDirectory)
+        //{
+        //    perObjectCb->data[id].modelTransform = ent->transform;
+        //    perObjectCb->data[id].modelTransformInverse = ent->transform.Invert();
+        //}
 
         perObjectCb.Upload();
     }

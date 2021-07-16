@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GG/Geometry.h>
 #include <vector>
 
 struct Point3 {
@@ -34,6 +35,7 @@ struct Material
 
 struct Mesh
 {
+	GG::Geometry*			dxGeometry;
 	Transform				transform;
 	std::vector<Material>	materials;
 	std::vector<Vertex>		vertices;
