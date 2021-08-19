@@ -3,9 +3,8 @@
 App::App() {}
 App::~App() {}
 
-void App::StartUp(Renderer* renderer)
+void App::StartUp()
 {
-    entityDirectoryRef = &(renderer->entityDirectory);
 }
 
 void App::Update()
@@ -26,20 +25,6 @@ void App::Update()
         static int counter = 0;
 
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-        for (const auto& [id, ent] : *entityDirectoryRef)
-        {
-            char buffer[128];
-            sprintf(buffer, "entity_%d", id);
-            if (ImGui::TreeNode(buffer))
-            {
-
-                ImGui::Text("id: %d", id);
-
-
-                ImGui::TreePop();
-            }
-        }
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 

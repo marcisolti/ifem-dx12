@@ -18,8 +18,6 @@
 #include <GG/GPSO.h>
 #include <GG/Tex2D.h>
 
-#include "ObjLoader.h"
-
 #include <iostream>
 #include <chrono>
 #include <map>
@@ -62,36 +60,6 @@ struct FrameContext
 {
 	ID3D12CommandAllocator* commandAllocator;
 	uint64_t                                fenceValue;
-};
-
-struct Entity
-{
-	GG::Geometry* geometry;
-	GG::Tex2D*	  texture;
-	Float4x4 transform;
-
-	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, const std::string& meshPath, const std::string& texturePath)
-	{
-		geometry = new GG::Geometry(device, meshPath);
-		texture = new GG::Tex2D(device, heap, texturePath);
-		texture->CreateSrv(device, heap, id);
-		
-		transform = Float4x4::Identity;
-	}
-	~Entity()
-	{
-		delete geometry;
-		delete texture;
-	}
-
-	Entity(uint32_t id, ID3D12Device* device, GG::DescriptorHeap* heap, GG::Geometry* geo, const std::string& texturePath)
-	{
-		geometry = geo;
-		texture = new GG::Tex2D(device, heap, texturePath);
-		texture->CreateSrv(device, heap, id);
-
-		transform = Float4x4::Identity;
-	}
 };
 
 class Renderer
@@ -147,8 +115,7 @@ class Renderer
 	float dt;
 
 public:
-	std::map<uint32_t, Entity*> entityDirectory;
-
+	
 	Renderer();
 	~Renderer();
 
@@ -160,10 +127,6 @@ public:
 	void UploadTextures();
 
 	void AddEntity(uint32_t id, const std::string& meshPath, const std::string& texPath);
-	void AddDeformable(uint32_t id, const std::string& meshPath);
-	GG::Geometry* GetDeformableGeo() { return entityDirectory[0]->geometry; }
-
-	void Transform(uint32_t id, const Float4x4& transform);
 
 private:
 

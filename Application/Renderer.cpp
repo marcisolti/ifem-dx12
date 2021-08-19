@@ -64,8 +64,8 @@ void Renderer::UploadTextures()
     DX_API("Failed to reset command list (UploadResources)")
         commandList->Reset(frameCtx->commandAllocator, nullptr);
 
-    for (const auto& [id, ent] : entityDirectory)
-        ent->texture->UploadResources(commandList);
+    //for (const auto& [id, ent] : entityDirectory)
+    //    ent->texture->UploadResources(commandList);
 
     DX_API("Failed to close command list (UploadResources)")
         commandList->Close();
@@ -122,11 +122,11 @@ void Renderer::Draw()
 
         perFrameCb.Upload();
         
-        for (const auto& [id, ent] : entityDirectory)
-        {
-            perObjectCb->data[id].modelTransform = ent->transform;
-            perObjectCb->data[id].modelTransformInverse = ent->transform.Invert();
-        }
+        //for (const auto& [id, ent] : entityDirectory)
+        //{
+        //    perObjectCb->data[id].modelTransform = ent->transform;
+        //    perObjectCb->data[id].modelTransformInverse = ent->transform.Invert();
+        //}
 
         perObjectCb.Upload();
     }
@@ -172,13 +172,13 @@ void Renderer::Draw()
             commandList->SetPipelineState(pso->Get());
 
             commandList->SetGraphicsRootConstantBufferView(0, perFrameCb.GetGPUVirtualAddress());
-            for (const auto& [id,ent] : entityDirectory)
-            {
-                commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress(id));
-                commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(id));
+            //for (const auto& [id,ent] : entityDirectory)
+            //{
+            //    commandList->SetGraphicsRootConstantBufferView(1, perObjectCb.GetGPUVirtualAddress(id));
+            //    commandList->SetGraphicsRootDescriptorTable(2, heap->GetGPUHandle(id));
 
-                ent->geometry->Draw(commandList);
-            }
+            //    ent->geometry->Draw(commandList);
+            //}
            
         }
 
@@ -216,9 +216,6 @@ void Renderer::Draw()
 
 void Renderer::ShutDown(HWND hwnd)
 {
-    for (const auto& [id,entity] : entityDirectory)
-        delete entity;
-
     WaitForLastSubmittedFrame();
 
     // Cleanup
@@ -229,24 +226,6 @@ void Renderer::ShutDown(HWND hwnd)
     CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
     //::UnregisterClass(wc.lpszClassName, wc.hInstance);
-}
-
-void Renderer::AddEntity(uint32_t id, const std::string& meshPath, const std::string& texPath)
-{
-    Entity* e = new Entity{ id, device, heap, meshPath, texPath };
-    entityDirectory.insert({ id, e });
-}
-
-void Renderer::Transform(uint32_t id, const Float4x4& transform)
-{
-    entityDirectory[id]->transform = transform;
-}
-
-void Renderer::AddDeformable(uint32_t id, const std::string& meshPath)
-{
-    GG::Geometry* geo = ObjLoader::parseFile(device, meshPath);
-    Entity* e = new Entity{ id, device, heap, geo, std::string{"bunnybase.png"} };
-    entityDirectory.insert({ id, e });
 }
 
 bool Renderer::CreateDeviceD3D(HWND hWnd)

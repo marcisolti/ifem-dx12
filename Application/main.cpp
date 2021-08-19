@@ -23,7 +23,7 @@ int main(int, char**)
     HWND hwnd = ::CreateWindow(wc.lpszClassName, "Dear ImGui DirectX12 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
     renderer.StartUp(hwnd);
-    app.StartUp(&renderer);
+    app.StartUp();
 
     renderer.UploadTextures();
 
