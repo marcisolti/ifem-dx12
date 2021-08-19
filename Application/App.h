@@ -7,9 +7,6 @@
 #include <vector>
 #include "Renderer.h"
 
-#include "Common/nlohmann/json.hpp"
-using json = nlohmann::json;
-
 class App
 {
 	bool show_demo_window = true;
@@ -17,13 +14,11 @@ class App
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	std::map<uint32_t, Entity*>* entityDirectoryRef;
 
-	json* config;
-
 public:
 	App();
 	~App();
 
-	void StartUp(Renderer* renderer, json* config);
+	void StartUp(Renderer* renderer);
 	void Update();
 
 };

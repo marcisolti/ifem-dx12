@@ -27,9 +27,6 @@
 
 #include <thread>
 
-#include "Common/nlohmann/json.hpp"
-using json = nlohmann::json;
-
 constexpr uint32_t                          NUM_FRAMES_IN_FLIGHT = 3;
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -149,15 +146,13 @@ class Renderer
 
 	float dt;
 
-	json* config;
-
 public:
 	std::map<uint32_t, Entity*> entityDirectory;
 
 	Renderer();
 	~Renderer();
 
-	void StartUp(HWND hwnd, json* config);
+	void StartUp(HWND hwnd);
 	void ShutDown(HWND hwnd);
 
 	void Draw();

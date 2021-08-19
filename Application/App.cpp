@@ -3,11 +3,9 @@
 App::App() {}
 App::~App() {}
 
-void App::StartUp(Renderer* renderer, json* config)
+void App::StartUp(Renderer* renderer)
 {
-    this->config = config;
     entityDirectoryRef = &(renderer->entityDirectory);
-
 }
 
 void App::Update()
@@ -16,9 +14,6 @@ void App::Update()
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
-
-    int stepNum = (*config)["app"]["stepNum"];
-    int displayIndex = (*config)["app"]["displayIndex"];
 
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (!show_demo_window)
@@ -31,19 +26,6 @@ void App::Update()
         static int counter = 0;
 
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-        ImGui::SliderInt("Frame", &displayIndex, 0, stepNum-1);
-
-        static bool playing = false;
-        if (ImGui::Button("Play/Pause"))
-            playing = !playing;
-
-        static int multiplier = 1;
-        ImGui::InputInt("timestep size", &multiplier);
-
-
-        if (playing && (displayIndex + multiplier < stepNum - 1))
-            displayIndex += multiplier;
 
         for (const auto& [id, ent] : *entityDirectoryRef)
         {
@@ -58,45 +40,6 @@ void App::Update()
                 ImGui::TreePop();
             }
         }
-
-        ImGui::Separator();
-
-        for (int i = 0; i < (*config)["lights"].size(); ++i)
-        {
-            char buffer[128];
-            sprintf(buffer, "light_%d", i);
-            if (ImGui::TreeNode(buffer))
-            {
-
-                ImVec4 lightColor = ImVec4{
-                    (*config)["lights"][i]["color"][0],
-                    (*config)["lights"][i]["color"][1],
-                    (*config)["lights"][i]["color"][2],
-                    1.0
-                };
-
-                ImVec4 lightPos = ImVec4{
-                    (*config)["lights"][i]["pos"][0],
-                    (*config)["lights"][i]["pos"][1],
-                    (*config)["lights"][i]["pos"][2],
-                    1.0
-                };
-                
-                ImGui::ColorEdit3("color", (float*)&lightColor); // Edit 3 floats representing a color
-                ImGui::DragFloat3("position", (float*)&lightPos);
-
-                (*config)["lights"][i]["pos"][0] = lightPos.x;
-                (*config)["lights"][i]["pos"][1] = lightPos.y;
-                (*config)["lights"][i]["pos"][2] = lightPos.z;
-
-                (*config)["lights"][i]["color"][0] = lightColor.x;
-                (*config)["lights"][i]["color"][1] = lightColor.y;
-                (*config)["lights"][i]["color"][2] = lightColor.z;
-
-                ImGui::TreePop();
-            }
-        }
-        
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
@@ -130,8 +73,6 @@ void App::Update()
         ImGui::Text("Hello from another window!");
         ImGui::End();
     }
-
-    (*config)["app"]["displayIndex"] = displayIndex;
 
     // Rendering
     ImGui::Render();

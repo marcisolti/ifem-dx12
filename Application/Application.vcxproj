@@ -63,8 +63,6 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="Simulator.cpp" />
-    <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\GG\ConstantBuffer.hpp" />
@@ -73,12 +71,9 @@
     <ClInclude Include="..\GG\GPSO.h" />
     <ClInclude Include="..\GG\Tex2D.h" />
     <ClInclude Include="App.h" />
-    <ClInclude Include="EnergyFunction.h" />
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="PerformanceCounter.h" />
     <ClInclude Include="Renderer.h" />
-    <ClInclude Include="Simulator.h" />
-    <ClInclude Include="Solver.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Media\configs\beam-bwEuler.json" />

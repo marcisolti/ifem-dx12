@@ -5,10 +5,8 @@ FrameContext frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 Renderer::Renderer() {}
 Renderer::~Renderer(){}
 
-void Renderer::StartUp(HWND hwnd, json* config)
+void Renderer::StartUp(HWND hwnd)
 {
-    this->config = config;
-
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
     {
@@ -97,6 +95,7 @@ void Renderer::Draw()
         perFrameCb->eyePos.xyz = camera->GetEyePosition();
         perFrameCb->eyePos.w = 1.0f;
 
+        /*
         for (int i = 0; i < (*config)["lights"].size(); ++i)
         {
 
@@ -115,7 +114,12 @@ void Renderer::Draw()
         }
 
         perFrameCb->nrLights = (*config)["lights"].size();
-        
+        */
+
+        perFrameCb->lights[0].color = { 1,1,1,1 };
+        perFrameCb->lights[0].position = { 1,1,1,0 };
+        perFrameCb->nrLights = 1;
+
         perFrameCb.Upload();
         
         for (const auto& [id, ent] : entityDirectory)
