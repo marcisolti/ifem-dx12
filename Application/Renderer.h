@@ -128,9 +128,9 @@ class Renderer
 	D3D12_RECT scissorRect;
 	// rtv
 	uint32_t								NUM_BACK_BUFFERS = 3;
-	GG::DescriptorHeap* rtvHeap;
+	GG::DescriptorHeap*						rtvHeap;
 	std::vector<com_ptr<ID3D12Resource>>	renderTargets;
-	GG::DescriptorHeap* dsvHeap;
+	GG::DescriptorHeap*						dsvHeap;
 	com_ptr<ID3D12Resource>					depthStencilBuffer;
 
 	// --- ----
